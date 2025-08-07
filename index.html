@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breast Cancer Dataset Analysis</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .header {
+            background-color: #f4f4f4;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .result-box {
+            background-color: #e8f5e8;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .code-block {
+            background-color: #f8f8f8;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007acc;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+        .metric {
+            display: inline-block;
+            margin: 10px 15px 10px 0;
+            padding: 10px;
+            background-color: #007acc;
+            color: white;
+            border-radius: 5px;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 5px;
+        }
+        .btn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 Breast Cancer Dataset Analysis</h1>
+        <p>Machine Learning project predicting breast cancer diagnosis using Logistic Regression</p>
+    </div>
+
+    <h2>📊 Project Overview</h2>
+    <p><strong>Dataset:</strong> Breast Cancer Dataset (569 samples, 30 features)<br>
+    <strong>Features:</strong> Measurements like radius, texture, perimeter, area, smoothness, etc.<br>
+    <strong>Target:</strong> Diagnosis (Benign vs Malignant)</p>
+
+    <h2>🎯 Key Results</h2>
+    <div class="result-box">
+        <div class="metric">Testing Accuracy: 95.61%</div>
+        <div class="metric">Precision: 97.50%</div>
+        <div class="metric">Recall: 90.70%</div>
+        <div class="metric">F1-Score: 93.98%</div>
+    </div>
+
+    <h2>🔍 What We Accomplished</h2>
+    <ol>
+        <li><strong>Data Exploration & Preprocessing</strong>
+            <ul>
+                <li>Loaded and explored the dataset structure</li>
+                <li>Converted diagnosis labels (M/B) to numerical values (1/0)</li>
+                <li>Removed unnecessary columns (id, unnamed columns)</li>
+                <li>Split data into features (X) and target (y)</li>
+            </ul>
+        </li>
+        
+        <li><strong>Train-Test Split</strong>
+            <ul>
+                <li>Split data into 80% training (455 samples) and 20% testing (114 samples)</li>
+                <li>Maintained balanced class distribution</li>
+            </ul>
+        </li>
+        
+        <li><strong>Model Training</strong>
+            <ul>
+                <li>Trained a Logistic Regression model on the training data</li>
+                <li>Used scikit-learn with random_state=42 for reproducibility</li>
+            </ul>
+        </li>
+        
+        <li><strong>Model Evaluation</strong>
+            <ul>
+                <li>Achieved 95.61% testing accuracy</li>
+                <li>Created confusion matrix analysis</li>
+                <li>Calculated precision, recall, and F1-score</li>
+                <li>Visualized results with heatmap</li>
+            </ul>
+        </li>
+    </ol>
+
+    <h2>📈 Confusion Matrix Results</h2>
+    <div class="code-block">
+        <pre>
+                 Predicted
+                 Benign (0)   Malignant (1)
+Actual Benign (0)     70           1
+       Malignant (1)   4          39
+        </pre>
+    </div>
+    
+    <p><strong>Interpretation:</strong></p>
+    <ul>
+        <li><strong>True Negatives (70):</strong> Correctly identified benign tumors</li>
+        <li><strong>False Positives (1):</strong> Benign tumor incorrectly classified as malignant</li>
+        <li><strong>False Negatives (4):</strong> Malignant tumor incorrectly classified as benign ⚠️</li>
+        <li><strong>True Positives (39):</strong> Correctly identified malignant tumors</li>
+    </ul>
+
+    <h2>🛠️ Technologies Used</h2>
+    <ul>
+        <li><strong>Python</strong> - Programming language</li>
+        <li><strong>Pandas</strong> - Data manipulation</li>
+        <li><strong>NumPy</strong> - Numerical operations</li>
+        <li><strong>Scikit-learn</strong> - Machine learning</li>
+        <li><strong>Matplotlib & Seaborn</strong> - Visualization</li>
+        <li><strong>Jupyter Notebook</strong> - Development environment</li>
+    </ul>
+
+    <h2>📁 Project Files</h2>
+    <div style="margin: 20px 0;">
+        <a href="breast_cancer_analysis.ipynb" class="btn">📓 View Jupyter Notebook</a>
+        <a href="Breast_cancer_dataset.csv" class="btn">📊 View Dataset</a>
+        <a href="readme" class="btn">📖 Read Documentation</a>
+    </div>
+
+    <h2>🏆 Conclusion</h2>
+    <div class="result-box">
+        <p>The Logistic Regression model shows excellent performance for breast cancer classification with <strong>95.61% accuracy</strong>. The model demonstrates minimal overfitting and strong generalization to unseen data, making it suitable for assisting in medical diagnosis decisions.</p>
+        
+        <p><strong>Key Strength:</strong> Very few false alarms (only 1 benign case misclassified)<br>
+        <strong>Area for Improvement:</strong> 4 false negatives require additional screening protocols in medical practice</p>
+    </div>
+
+    <footer style="margin-top: 40px; text-align: center; color: #666;">
+        <p>Created by Salman Sheikh | <a href="https://github.com/salmansheikhutk/datascience">View on GitHub</a></p>
+    </footer>
+</body>
+</html>

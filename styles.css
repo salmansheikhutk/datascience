@@ -1,0 +1,231 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f8fafc;
+    color: #2d3748;
+    line-height: 1.6;
+    padding: 40px 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+h1 {
+    font-size: 3rem;
+    font-weight: 300;
+    color: #1a202c;
+    margin-bottom: 20px;
+    letter-spacing: -0.02em;
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    color: #718096;
+    margin-bottom: 60px;
+    font-weight: 300;
+}
+
+.section {
+    background: white;
+    padding: 40px;
+    margin-bottom: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+h2 {
+    font-size: 1.8rem;
+    font-weight: 400;
+    color: #2d3748;
+    margin-bottom: 30px;
+}
+
+.metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 30px;
+    margin: 40px 0;
+}
+
+.metric {
+    padding: 30px 20px;
+}
+
+.metric-value {
+    font-size: 2.5rem;
+    font-weight: 200;
+    color: #667eea;
+    margin-bottom: 5px;
+}
+
+.metric-label {
+    font-size: 0.9rem;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.overview {
+    text-align: left;
+    max-width: 600px;
+    margin: 0 auto;
+    font-size: 1.1rem;
+    line-height: 1.8;
+}
+
+.confusion-matrix {
+    font-family: 'SF Mono', Monaco, monospace;
+    background: #1a202c;
+    color: #e2e8f0;
+    padding: 30px;
+    border-radius: 8px;
+    font-size: 1rem;
+    margin: 30px 0;
+    white-space: pre;
+}
+
+.tech-stack {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    margin: 30px 0;
+}
+
+.tech {
+    background: #f7fafc;
+    padding: 15px 25px;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    color: #4a5568;
+    border: 1px solid #e2e8f0;
+}
+
+.buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    margin: 40px 0;
+}
+
+.btn {
+    display: inline-block;
+    background: #667eea;
+    color: white;
+    padding: 15px 30px;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 400;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    background: #5a67d8;
+    transform: translateY(-1px);
+}
+
+.conclusion {
+    background: #f0fff4;
+    border: 1px solid #9ae6b4;
+    padding: 30px;
+    border-radius: 8px;
+    margin: 30px 0;
+    color: #22543d;
+}
+
+footer {
+    margin-top: 60px;
+    color: #a0aec0;
+    font-size: 0.9rem;
+}
+
+footer a {
+    color: #667eea;
+    text-decoration: none;
+}
+
+.chart-container {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    margin: 20px 0;
+    position: relative;
+    height: 400px;
+}
+
+.chart-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 30px;
+    margin: 40px 0;
+}
+
+.visual-metric {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.visual-metric::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: rotate(45deg);
+}
+
+.accuracy-circle {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: conic-gradient(#667eea 0deg, #667eea 344deg, #e2e8f0 344deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    position: relative;
+}
+
+.accuracy-circle::before {
+    content: '';
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    background: white;
+    border-radius: 50%;
+}
+
+.accuracy-text {
+    position: relative;
+    z-index: 2;
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #667eea;
+}
+
+@media (max-width: 600px) {
+    h1 { font-size: 2.5rem; }
+    .section { padding: 25px; }
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .buttons { flex-direction: column; align-items: center; }
+    .chart-grid { grid-template-columns: 1fr; }
+    .chart-container { height: 300px; }
+}

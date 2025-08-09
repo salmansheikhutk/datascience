@@ -323,6 +323,12 @@ footer a {
     font-size: 0.8rem;
 }
 
+.category-title {
+    margin: 36px 0 16px;
+    text-align: left;
+    font-weight: 600;
+}
+
 @media (max-width: 600px) {
     h1 {
         font-size: 2.5rem;
@@ -347,5 +353,9 @@ footer a {
 
     .chart-container {
         height: 300px;
+    }
+
+    .category-title {
+        text-align: center;
     }
 }

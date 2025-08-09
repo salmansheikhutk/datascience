@@ -13,6 +13,21 @@
         .hero h1 { font-size: 3rem; margin-bottom: 10px; }
         .hero p { color: #718096; }
 
+        .category-title {
+            font-size: 2rem;
+            margin: 40px 0 20px;
+            position: relative;
+        }
+        .category-title::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            bottom: -5px;
+            left: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -64,43 +79,88 @@
     <div class="container">
         <div class="hero">
             <h1>Machine Learning Model Gallery</h1>
-            <p>A curated set of ML examples with clean visuals and metrics.</p>
+            <p>Explore core ML categories and example projects.</p>
         </div>
 
+        <h2 class="category-title">Supervised Learning</h2>
         <div class="grid">
             <div class="card">
                 <div class="icon">Σ</div>
                 <h3>Logistic Regression</h3>
-                <p>Binary classification of breast tumor as benign or malignant.</p>
+                <p>Binary classification of breast tumors (benign vs malignant).</p>
                 <div class="taglist">
-                    <span class="tag">Supervised</span>
                     <span class="tag">Classification</span>
                     <span class="tag">Tabular</span>
                 </div>
                 <p style="margin-top:12px;"><a href="logistic-regression.html">Open example →</a></p>
             </div>
-
-            <!-- Future cards -->
             <div class="card" style="opacity:.6; pointer-events:none;">
                 <div class="icon">📈</div>
                 <h3>Linear Regression</h3>
                 <p>Predict continuous values from numeric features.</p>
                 <div class="taglist">
-                    <span class="tag">Supervised</span>
                     <span class="tag">Regression</span>
                 </div>
                 <p style="margin-top:12px;">Coming soon</p>
             </div>
-
             <div class="card" style="opacity:.6; pointer-events:none;">
                 <div class="icon">🌳</div>
                 <h3>Random Forest</h3>
                 <p>Ensemble classification with feature importance.</p>
                 <div class="taglist">
-                    <span class="tag">Supervised</span>
                     <span class="tag">Ensemble</span>
+                    <span class="tag">Classification</span>
                 </div>
                 <p style="margin-top:12px;">Coming soon</p>
+            </div>
+        </div>
+
+        <h2 class="category-title">Unsupervised Learning</h2>
+        <div class="grid">
+            <div class="card">
+                <div class="icon">✨</div>
+                <h3>K‑Means Clustering</h3>
+                <p>Group data into clusters based on similarity.</p>
+                <div class="taglist">
+                    <span class="tag">Clustering</span>
+                </div>
+                <p style="margin-top:12px;"><a href="kmeans-clustering.html">Open dummy example →</a></p>
+            </div>
+            <div class="card" style="opacity:.6; pointer-events:none;">
+                <div class="icon">📉</div>
+                <h3>PCA</h3>
+                <p>Dimensionality reduction for visualization.</p>
+                <div class="taglist">
+                    <span class="tag">Reduction</span>
+                </div>
+                <p style="margin-top:12px;">Coming soon</p>
+            </div>
+        </div>
+
+        <h2 class="category-title">Semi‑Supervised Learning</h2>
+        <div class="grid">
+            <div class="card">
+                <div class="icon">🔗</div>
+                <h3>Label Propagation</h3>
+                <p>Leverage few labels to infer the rest.</p>
+                <div class="taglist">
+                    <span class="tag">Graphs</span>
+                </div>
+                <p style="margin-top:12px;"><a href="label-propagation.html">Open dummy example →</a></p>
+            </div>
+        </div>
+
+        <h2 class="category-title">Reinforcement Learning</h2>
+        <div class="grid">
+            <div class="card">
+                <div class="icon">🎮</div>
+                <h3>Q‑Learning</h3>
+                <p>Learn actions via rewards and penalties.</p>
+                <div class="taglist">
+                    <span class="tag">Agent</span>
+                    <span class="tag">Policy</span>
+                </div>
+                <p style="margin-top:12px;"><a href="q-learning.html">Open dummy example →</a></p>
             </div>
         </div>
 
@@ -108,7 +168,5 @@
             <p>Created by Salman Sheikh • <a href="https://github.com/salmansheikhutk/datascience">GitHub</a></p>
         </footer>
     </div>
-
-    <!-- No charts on home page -->
 </body>
 </html>

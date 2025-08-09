@@ -23,6 +23,37 @@
       <p>Clusters aligned to labels are correct 90.51% of the time</p>
     </div>
 
+    <!-- NEW: Methodology section -->
+    <div class="section">
+      <h2>Methodology</h2>
+      <div class="steps-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 30px 0;">
+        <div class="step-item" style="background: #f8fafc; padding: 20px; border-radius: 10px; border-left: 4px solid #667eea;">
+          <h3 style="color: #667eea; margin-bottom: 10px;">1. Data Loading</h3>
+          <p>Imported the Breast Cancer Wisconsin dataset (569 samples, 30 features)</p>
+        </div>
+        <div class="step-item" style="background: #f8fafc; padding: 20px; border-radius: 10px; border-left: 4px solid #10b981;">
+          <h3 style="color: #10b981; margin-bottom: 10px;">2. Data Cleaning</h3>
+          <p>Dropped ID/unnamed columns; converted diagnosis M/B → 1/0 (labels used only for evaluation)</p>
+        </div>
+        <div class="step-item" style="background: #f8fafc; padding: 20px; border-radius: 10px; border-left: 4px solid #f59e0b;">
+          <h3 style="color: #f59e0b; margin-bottom: 10px;">3. Feature Preparation</h3>
+          <p>Built feature matrix X from 30 measurements; kept y to assess cluster alignment post‑hoc</p>
+        </div>
+        <div class="step-item" style="background: #f8fafc; padding: 20px; border-radius: 10px; border-left: 4px solid #06b6d4;">
+          <h3 style="color: #06b6d4; margin-bottom: 10px;">4. Imputation & Scaling</h3>
+          <p>Imputed missing values with feature medians and standardized all features</p>
+        </div>
+        <div class="step-item" style="background: #f8fafc; padding: 20px; border-radius: 10px; border-left: 4px solid #8b5cf6;">
+          <h3 style="color: #8b5cf6; margin-bottom: 10px;">5. K‑Means Training</h3>
+          <p>Ran K‑Means with k=2, random_state=42, n_init=10 on the scaled feature space</p>
+        </div>
+        <div class="step-item" style="background: #f8fafc; padding: 20px; border-radius: 10px; border-left: 4px solid #ef4444;">
+          <h3 style="color: #ef4444; margin-bottom: 10px;">6. Evaluation</h3>
+          <p>Computed silhouette score; then compared clusters to the true labels (y) post‑hoc by mapping each cluster to its majority class (labels not used during clustering). Reported accuracy, ARI, and confusion matrix.</p>
+        </div>
+      </div>
+    </div>
+
     <div class="section">
       <h2>Summary Metrics</h2>
       <div class="metrics">

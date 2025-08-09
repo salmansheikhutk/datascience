@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>K‑Means Clustering (Dummy)</title>
+  <title>K‑Means Clustering (Unsupervised)</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -11,20 +11,64 @@
     <div class="buttons" style="margin-top: 0; margin-bottom: 20px; justify-content: flex-start;">
       <a href="index.html" class="btn btn-secondary">← Back to Home</a>
     </div>
-    <h1>Unsupervised Learning: K‑Means (Dummy)</h1>
-    <p class="subtitle">Placeholder page. Replace content later with your real example.</p>
+    <h1>Unsupervised Learning: K‑Means</h1>
+    <p class="subtitle">Clustering the breast cancer features into two groups and comparing against labels.</p>
+
+    <!-- Added top-of-page accuracy visualization -->
+    <div class="visual-metric" style="margin: 20px 0 30px;">
+      <div class="accuracy-circle">
+        <div class="accuracy-text">90.51%</div>
+      </div>
+      <h3>Post‑hoc Accuracy</h3>
+      <p>Clusters aligned to labels are correct 90.51% of the time</p>
+    </div>
 
     <div class="section">
-      <h2>Overview</h2>
+      <h2>Summary Metrics</h2>
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-value" id="silhouette">0.3434</div>
+          <div class="metric-label">Silhouette Score</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value" id="ari">0.6536</div>
+          <div class="metric-label">Adjusted Rand Index</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value" id="acc">90.51%</div>
+          <div class="metric-label">Accuracy vs Labels (post‑hoc)</div>
+        </div>
+      </div>
+      <p style="color:#718096;">Note: K‑Means is unsupervised; labels are only used to assess alignment after clustering.</p>
+    </div>
+
+    <div class="section">
+      <h2>Confusion Matrix (after mapping clusters → labels)</h2>
+      <pre class="confusion-matrix" id="cm">                 Predicted
+                 Benign    Malignant
+Actual Benign      339        18
+       Malignant     36       176</pre>
+    </div>
+
+    <div class="section">
+      <h2>Summary</h2>
       <div class="overview">
-        <p>This is a dummy page for K‑Means clustering. You can update this later with a real dataset, charts, and write‑up.</p>
-        <p>Suggested content to add:</p>
+        <p><strong>What is K‑Means?</strong> It’s a way to automatically group data points that look similar, without using any labels. Here we asked it to form 2 groups (k=2), hoping one group lines up with benign tumors and the other with malignant tumors.</p>
+        <p><strong>How we evaluated it:</strong> We didn’t use the diagnosis labels to train K‑Means. After clustering, we checked how well the two groups match the real labels (this is a post‑hoc check). We also used a standard unsupervised score called the <em>silhouette score</em> to see how well the groups are separated.</p>
+        <p><strong>Results:</strong> The silhouette score is <strong>0.3434</strong> (higher means cleaner separation). When we align each cluster to the majority label, we get <strong>90.51%</strong> accuracy, and the Adjusted Rand Index (which measures agreement between clusters and labels) is <strong>0.6536</strong>. The confusion matrix shows there were <strong>18</strong> benign cases grouped with malignant and <strong>36</strong> malignant cases grouped with benign.</p>
+        <p><strong>Takeaway:</strong> Even without labels, K‑Means finds structure that largely corresponds to the medical diagnosis. However, it’s not as accurate as a supervised model trained with labels (like Logistic Regression), so it’s best used for exploration, not final diagnosis.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Details</h2>
+      <div class="overview">
+        <p>Steps:</p>
         <ul>
-          <li>Dataset description</li>
-          <li>Preprocessing steps</li>
-          <li>Number of clusters (k) and how you chose it</li>
-          <li>Cluster visualization (2D/3D) and centroids</li>
-          <li>Metrics like inertia or silhouette score</li>
+          <li>Imputed missing values and standardized all features</li>
+          <li>Ran K‑Means with k=2</li>
+          <li>Computed silhouette score (unsupervised quality)</li>
+          <li>Mapped each cluster to the majority class, then computed accuracy and ARI</li>
         </ul>
       </div>
     </div>

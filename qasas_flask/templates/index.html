@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قصص الأنبياء - Interactive Arabic Reader</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+                <div class="header">
+            <h1>🕌 Qasas ul-Anbiya</h1>
+            <p>Interactive Arabic Reader with AI-Powered Word Recognition</p>
+            <p><small>💡 <strong>Instructions:</strong> Click anywhere on the Arabic text to get AI-powered word definitions and analysis</small></p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- PDF Viewer Section -->
+            <div class="pdf-section">
+                <div class="pdf-controls">
+                    <button id="prev-page" disabled>← Previous Page</button>
+                    <button id="next-page" disabled>Next Page →</button>
+                    <input type="number" id="page-input" min="1" placeholder="Page #...">
+                    <button id="zoom-out">Zoom Out -</button>
+                    <button id="zoom-in">Zoom In +</button>
+                    <button id="test-api" style="background: #27ae60;">Test API</button>
+                    <span id="page-info">Loading...</span>
+                </div>
+                
+                <div class="pdf-container">
+                    <div id="loading-message" class="loading-message">
+                        <div class="spinner"></div>
+                        <p>Loading PDF...</p>
+                    </div>
+                    <img id="pdf-image" alt="PDF Page" style="display: none;">
+                </div>
+            </div>
+
+            <!-- Definition Panel -->
+            <div class="definition-panel hidden" id="definition-panel">
+                <div class="panel-header">
+                    <h3>Word Analysis</h3>
+                    <button id="close-panel">×</button>
+                </div>
+                <div class="panel-content" id="panel-content">
+                    <p style="text-align: center;">Click anywhere on the Arabic text to get AI-powered word definitions</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="status-message" class="status-message hidden"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

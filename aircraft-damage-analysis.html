@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aircraft Damage Analysis</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <h1>Aircraft Damage Classification and Captioning</h1>
+                <p class="subtitle">Using deep learning to classify and describe aircraft damage.</p>
+            </div>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <a href="index.html">Home</a>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+            <div class="page-content">
+                <section id="summary">
+                    <h2>Project Summary</h2>
+                    <p>This project uses a pre-trained VGG16 model to classify aircraft damage into "dent" and "crack" categories. Additionally, it employs a pre-trained BLIP model to generate descriptive captions and summaries for the damage images. The goal is to automate aircraft inspection processes, improving safety and efficiency.</p>
+                </section>
+
+                <section id="methodology">
+                    <h2>Methodology</h2>
+                    <ol>
+                        <li><strong>Dataset:</strong> The model is trained on the Aircraft Damage Dataset, which contains images of dents and cracks.</li>
+                        <li><strong>Classification Model:</strong> A VGG16 model, pre-trained on ImageNet, is used as a feature extractor. A custom classifier head is added on top to perform the binary classification of damage types.</li>
+                        <li><strong>Captioning Model:</strong> A pre-trained BLIP (Bootstrapping Language-Image Pre-training) model from Hugging Face is used to generate descriptive text captions and summaries for the images.</li>
+                        <li><strong>Implementation:</strong> The entire workflow is built in a Jupyter Notebook using TensorFlow, Keras, and the Hugging Face Transformers library.</li>
+                    </ol>
+                </section>
+
+                <section id="results">
+                    <h2>Results</h2>
+                    <p>The notebook details the training process, including accuracy and loss curves for the classification model. It provides an evaluation on the test set and visualizes predictions on sample images. It also demonstrates the captioning and summarization capabilities of the BLIP model on aircraft damage images.</p>
+                    <p>Explore the full implementation and results in the Jupyter Notebook.</p>
+                    <a href="https://nbviewer.jupyter.org/github/salmansheikhutk/datascience/blob/dev/Final_Project_Classification_and_Captioning.ipynb" target="_blank" class="button">View Notebook</a>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Salman Sheikh. All Rights Reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

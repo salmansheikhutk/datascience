@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Classification and Captioning</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <h1>Image Classification and Captioning</h1>
+                <p class="subtitle">A deep learning model to understand and describe images.</p>
+            </div>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <a href="index.html">Home</a>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+            <div class="page-content">
+                <section id="summary">
+                    <h2>Project Summary</h2>
+                    <p>This project implements a deep learning model capable of generating descriptive captions for images. It uses a pre-trained Convolutional Neural Network (CNN), specifically ResNet, to extract features from images and an LSTM (Long Short-Term Memory) network to generate captions. The model was trained on the Flickr8k dataset, a standard benchmark for image captioning tasks.</p>
+                </section>
+
+                <section id="methodology">
+                    <h2>Methodology</h2>
+                    <p>The approach combines a CNN encoder with an LSTM decoder:</p>
+                    <ol>
+                        <li><strong>Image Feature Extraction:</strong> A pre-trained ResNet model processes input images to extract a rich set of visual features. This leverages the power of a model already trained on a massive dataset (ImageNet).</li>
+                        <li><strong>Text Processing:</strong> The captions in the training data are cleaned, tokenized, and converted into sequences of integers. A vocabulary is built from the most frequent words.</li>
+                        <li><strong>Model Architecture:</strong> An encoder-decoder architecture is used. The CNN acts as the encoder, and an LSTM network acts as the decoder. The image features from the CNN are fed into the LSTM, which then generates the caption word by word.</li>
+                        <li><strong>Training:</strong> The model is trained to predict the next word in a sequence, given the image features and the preceding words.</li>
+                        <li><strong>Inference (Caption Generation):</strong> To generate a caption for a new image, the image is passed through the CNN encoder. The resulting features are fed to the LSTM decoder, which generates the caption sequentially.</li>
+                    </ol>
+                </section>
+
+                <section id="results">
+                    <h2>Results</h2>
+                    <p>The model's performance is evaluated using the BLEU (Bilingual Evaluation Understudy) score, which compares the machine-generated captions to human-written reference captions. The notebook demonstrates the model generating captions for sample images from the test set, showcasing its ability to identify objects, attributes, and actions within the images.</p>
+                    <p>You can view the full implementation and results in the Jupyter Notebook.</p>
+                    <a href="https://nbviewer.jupyter.org/github/salmansheikhutk/datascience/blob/dev/Final_Project_Classification_and_Captioning.ipynb" target="_blank" class="button">View Notebook</a>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Salman Sheikh. All Rights Reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,112 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>K‑Means Clustering (Unsupervised)</title>
-  <link rel="stylesheet" href="styles.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-Means Clustering: Knoxville Food Venues</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="container">
-    <div class="buttons" style="margin-top: 0; margin-bottom: 20px; justify-content: flex-start;">
-      <a href="index.html" class="btn btn-secondary">← Back to Home</a>
-    </div>
-    <h1>Unsupervised Learning: K‑Means</h1>
-    <p class="subtitle">Clustering the breast cancer features into two groups and comparing against labels.</p>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <h1>K-Means Clustering: Knoxville Food Venues</h1>
+                <p class="subtitle">An analysis of food venues in Knoxville neighborhoods using Foursquare data.</p>
+            </div>
+        </div>
+    </header>
 
-    <!-- Added top-of-page accuracy visualization -->
-    <div class="visual-metric" style="margin: 20px 0 30px;">
-      <div class="accuracy-circle">
-        <div class="accuracy-text">90.51%</div>
-      </div>
-      <h3>Post‑hoc Accuracy</h3>
-      <p>Clusters aligned to labels are correct 90.51% of the time</p>
-    </div>
+    <nav>
+        <div class="container">
+            <a href="index.html">Home</a>
+        </div>
+    </nav>
 
-    <!-- NEW: Methodology section -->
-    <div class="section">
-      <h2>Methodology</h2>
-      <div class="steps-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 30px 0;">
-        <div class="step-item" style="background: #f8fafc; padding: 20px; border-radius: 10px; border-left: 4px solid #667eea;">
-          <h3 style="color: #667eea; margin-bottom: 10px;">1. Data Loading</h3>
-          <p>Imported the Breast Cancer Wisconsin dataset (569 samples, 30 features)</p>
-        </div>
-        <div class="step-item" style="background: #f8fafc; padding: 20px; border-radius: 10px; border-left: 4px solid #10b981;">
-          <h3 style="color: #10b981; margin-bottom: 10px;">2. Data Cleaning</h3>
-          <p>Dropped ID/unnamed columns; converted diagnosis M/B → 1/0 (labels used only for evaluation)</p>
-        </div>
-        <div class="step-item" style="background: #f8fafc; padding: 20px; border-radius: 10px; border-left: 4px solid #f59e0b;">
-          <h3 style="color: #f59e0b; margin-bottom: 10px;">3. Feature Preparation</h3>
-          <p>Built feature matrix X from 30 measurements; kept y to assess cluster alignment post‑hoc</p>
-        </div>
-        <div class="step-item" style="background: #f8fafc; padding: 20px; border-radius: 10px; border-left: 4px solid #06b6d4;">
-          <h3 style="color: #06b6d4; margin-bottom: 10px;">4. Imputation & Scaling</h3>
-          <p>Imputed missing values with feature medians and standardized all features</p>
-        </div>
-        <div class="step-item" style="background: #f8fafc; padding: 20px; border-radius: 10px; border-left: 4px solid #8b5cf6;">
-          <h3 style="color: #8b5cf6; margin-bottom: 10px;">5. K‑Means Training</h3>
-          <p>Ran K‑Means with k=2, random_state=42, n_init=10 on the scaled feature space</p>
-        </div>
-        <div class="step-item" style="background: #f8fafc; padding: 20px; border-radius: 10px; border-left: 4px solid #ef4444;">
-          <h3 style="color: #ef4444; margin-bottom: 10px;">6. Evaluation</h3>
-          <p>Computed silhouette score; then compared clusters to the true labels (y) post‑hoc by mapping each cluster to its majority class (labels not used during clustering). Reported accuracy, ARI, and confusion matrix.</p>
-        </div>
-      </div>
-    </div>
+    <main>
+        <div class="container">
+            <div class="page-content">
+                <section id="summary">
+                    <h2>Project Summary</h2>
+                    <p>This project analyzes the distribution of food venues across different neighborhoods in Knoxville, TN. By leveraging the Foursquare API to gather data and applying K-Means clustering, the project aims to identify distinct neighborhood profiles based on their food scenes. This analysis can help prospective restaurant owners make informed decisions about where to open a new establishment, such as a new Pizza Place.</p>
+                </section>
 
-    <div class="section">
-      <h2>Summary Metrics</h2>
-      <div class="metrics">
-        <div class="metric">
-          <div class="metric-value" id="silhouette">0.3434</div>
-          <div class="metric-label">Silhouette Score</div>
-        </div>
-        <div class="metric">
-          <div class="metric-value" id="ari">0.6536</div>
-          <div class="metric-label">Adjusted Rand Index</div>
-        </div>
-        <div class="metric">
-          <div class="metric-value" id="acc">90.51%</div>
-          <div class="metric-label">Accuracy vs Labels (post‑hoc)</div>
-        </div>
-      </div>
-      <p style="color:#718096;">Note: K‑Means is unsupervised; labels are only used to assess alignment after clustering.</p>
-    </div>
+                <section id="methodology">
+                    <h2>Methodology</h2>
+                    <ol>
+                        <li><strong>Data Collection:</strong> A list of Knoxville neighborhoods was compiled, and their geographical coordinates were obtained using the `geopy` library.</li>
+                        <li><strong>Foursquare API:</strong> The Foursquare API was used to fetch the top 100 food venues within a 750-meter radius of each neighborhood's center.</li>
+                        <li><strong>Data Preprocessing:</strong> The venue data was cleaned and transformed using one-hot encoding to prepare it for clustering based on venue category frequency.</li>
+                        <li><strong>K-Means Clustering:</strong> The K-Means algorithm was applied to group neighborhoods into five distinct clusters based on their most common venue types.</li>
+                        <li><strong>Visualization:</strong> The results, including the neighborhood clusters, were visualized on an interactive map using the `Folium` library.</li>
+                    </ol>
+                </section>
 
-    <div class="section">
-      <h2>Confusion Matrix (after mapping clusters → labels)</h2>
-      <pre class="confusion-matrix" id="cm">                 Predicted
-                 Benign    Malignant
-Actual Benign      339        18
-       Malignant     36       176</pre>
-    </div>
-
-    <div class="section">
-      <h2>Summary</h2>
-      <div class="overview">
-        <p><strong>What is K‑Means?</strong> It’s a way to automatically group data points that look similar, without using any labels. Here we asked it to form 2 groups (k=2), hoping one group lines up with benign tumors and the other with malignant tumors.</p>
-        <p><strong>How we evaluated it:</strong> We didn’t use the diagnosis labels to train K‑Means. After clustering, we checked how well the two groups match the real labels (this is a post‑hoc check). We also used a standard unsupervised score called the <em>silhouette score</em> to see how well the groups are separated.</p>
-        <p><strong>Results:</strong> The silhouette score is <strong>0.3434</strong> (higher means cleaner separation). When we align each cluster to the majority label, we get <strong>90.51%</strong> accuracy, and the Adjusted Rand Index (which measures agreement between clusters and labels) is <strong>0.6536</strong>. The confusion matrix shows there were <strong>18</strong> benign cases grouped with malignant and <strong>36</strong> malignant cases grouped with benign.</p>
-        <p><strong>Takeaway:</strong> Even without labels, K‑Means finds structure that largely corresponds to the medical diagnosis. However, it’s not as accurate as a supervised model trained with labels (like Logistic Regression), so it’s best used for exploration, not final diagnosis.</p>
-      </div>
-    </div>
-
-    <div class="section">
-      <h2>Details</h2>
-      <div class="overview">
-        <p>Steps:</p>
-        <ul>
-          <li>Imputed missing values and standardized all features</li>
-          <li>Ran K‑Means with k=2</li>
-          <li>Computed silhouette score (unsupervised quality)</li>
-          <li>Mapped each cluster to the majority class, then computed accuracy and ARI</li>
-        </ul>
-      </div>
-    </div>
+                <section id="results">
+                    <h2>Results</h2>
+                    <p>The analysis identified five distinct clusters of neighborhoods, each with a unique culinary profile. For example, the study found that most pizza places were concentrated in one cluster, while other clusters were characterized by a high density of fast-food restaurants or specific cuisines like Indian or Chinese. The project provides a detailed breakdown of each cluster, offering valuable insights into the food landscape of Knoxville.</p>
+                    <p>For a complete walkthrough of the analysis, including the code and interactive maps, please view the Jupyter Notebook.</p>
+                    <a href="https://nbviewer.jupyter.org/github/salmansheikhutk/datascience/blob/dev/Capstone%20Project.ipynb" target="_blank" class="button">View Notebook</a>
+                </section>
+            </div>
+        </div>
+    </main>
 
     <footer>
-      <p>Created by Salman Sheikh • <a href="https://github.com/salmansheikhutk/datascience">GitHub</a></p>
+        <div class="container">
+            <p>&copy; 2024 Salman Sheikh. All Rights Reserved.</p>
+        </div>
     </footer>
-  </div>
 </body>
 </html>

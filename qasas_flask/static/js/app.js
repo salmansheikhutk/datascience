@@ -48,6 +48,32 @@ async function initializeApp() {
         }
     });
     
+    pageInput.addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+            const page = parseInt(this.value);
+            if (page >= 1 && page <= totalPages) {
+                goToPage(page);
+            }
+        }
+    });
+    
+    // Add keyboard shortcuts for navigation
+    document.addEventListener('keydown', function(event) {
+        // Only handle keys when not typing in an input field
+        if (event.target.tagName === 'INPUT') return;
+        
+        switch(event.key) {
+            case 'ArrowLeft':
+                event.preventDefault();
+                showPrevPage();
+                break;
+            case 'ArrowRight':
+                event.preventDefault();
+                showNextPage();
+                break;
+        }
+    });
+    
     // Add click handler to PDF image - now supports box selection
     pdfImage.addEventListener('mousedown', handleMouseDown);
     pdfImage.addEventListener('mousemove', handleMouseMove);
@@ -947,6 +973,7 @@ function updateUI() {
     nextBtn.disabled = currentPage >= totalPages || isLoading;
     
     // Update page input
+    pageInput.value = currentPage;
     pageInput.max = totalPages;
 }
 

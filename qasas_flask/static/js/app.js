@@ -13,6 +13,7 @@ const nextBtn = document.getElementById('next-page');
 const pageInput = document.getElementById('page-input');
 const zoomInBtn = document.getElementById('zoom-in');
 const zoomOutBtn = document.getElementById('zoom-out');
+const translatePageBtn = document.getElementById('translate-page');
 const testApiBtn = document.getElementById('test-api');
 const pageInfo = document.getElementById('page-info');
 const pdfImage = document.getElementById('pdf-image');
@@ -35,6 +36,7 @@ async function initializeApp() {
     nextBtn.addEventListener('click', showNextPage);
     zoomInBtn.addEventListener('click', zoomIn);
     zoomOutBtn.addEventListener('click', zoomOut);
+    translatePageBtn.addEventListener('click', () => loadPageTranslation(currentPage));
     testApiBtn.addEventListener('click', testApiConnection);
     closePanel.addEventListener('click', hideDefinitionPanel);
     debugBtn.addEventListener('click', toggleDebugMode);
@@ -82,6 +84,84 @@ async function loadPDF() {
     }
 }
 
+async function ensureVisionIndexForPage(pageNum) {
+    const res = await fetch(`/vision_index/${pageNum}`);
+    const data = await res.json();
+    if (!data.success) {
+        console.warn('Vision index init failed:', data.message);
+    } else {
+        console.log(`Vision index ready for page ${pageNum}, tokens: ${data.token_count}`);
+    }
+}
+
+async function loadPageTranslation(pageNum) {
+    try {
+        showDefinitionPanel();
+        panelContent.innerHTML = `
+            <div class="loading-message">
+                <div class="spinner"></div>
+                <p>Translating page ${pageNum}...</p>
+            </div>
+        `;
+        
+        const response = await fetch(`/translate_page/${pageNum}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            panelContent.innerHTML = `
+                <div class="page-translation">
+                    <h3 style="margin: 0 0 15px 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 8px;">
+                        📄 Page ${pageNum} Translation
+                    </h3>
+                    <div style="font-size: 15px; line-height: 1.6; color: #333; white-space: pre-line;">
+                        ${data.translation}
+                    </div>
+                </div>
+            `;
+        } else {
+            panelContent.innerHTML = `
+                <div class="definition-item" style="border-left-color: #e74c3c; background: #fdf2f2;">
+                    <div style="color: #e74c3c; font-weight: bold;">Translation Error</div>
+                    <div style="color: #333; margin-top: 8px;">${data.message}</div>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Translation error:', error);
+        panelContent.innerHTML = `
+            <div class="definition-item" style="border-left-color: #e74c3c; background: #fdf2f2;">
+                <div style="color: #e74c3c; font-weight: bold;">Error</div>
+                <div style="color: #333; margin-top: 8px;">Failed to load translation</div>
+            </div>
+        `;
+    }
+}
+
+async function handleImageClick(event) {
+    // Don't handle click if we were selecting
+    if (isSelecting) return;
+    
+    const rect = pdfImage.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    // Convert coordinates relative to image
+    const scaleX = pdfImage.naturalWidth / pdfImage.width;
+    const scaleY = pdfImage.naturalHeight / pdfImage.height;
+    
+    const realX = Math.round(x * scaleX);
+    const realY = Math.round(y * scaleY);
+    
+    console.log(`Image clicked at: (${x}, ${y}) -> scaled: (${realX}, ${realY})`);
+    console.log(`Image dimensions: display=${pdfImage.width}x${pdfImage.height}, natural=${pdfImage.naturalWidth}x${pdfImage.naturalHeight}`);
+    
+    // Ensure vision index exists for this page
+    await ensureVisionIndexForPage(currentPage);
+    
+    // Analyze the click
+    await analyzeClick(realX, realY);
+}
+
 async function loadPage(pageNum) {
     if (isLoading || pageNum < 1 || pageNum > totalPages) return;
     
@@ -96,26 +176,45 @@ async function loadPage(pageNum) {
         const data = await response.json();
         
         if (data.success) {
-            pdfImage.src = data.image;
-            pdfImage.style.display = 'block';
             currentPage = pageNum;
             
-            // Update page input
-            pageInput.value = currentPage;
+            // Create new image to load
+            const newImage = new Image();
+            newImage.onload = function() {
+                pdfImage.src = data.image_url;
+                pdfImage.style.display = 'block';
+                loadingMessage.style.display = 'none';
+                isLoading = false;
+                
+                console.log(`Page ${pageNum} loaded successfully`);
+                updateUI();
+            };
             
-            console.log(`Page ${pageNum} loaded successfully`);
-            showStatus(`Page ${pageNum} loaded`, 'success', 2000);
+            newImage.onerror = function() {
+                throw new Error('Failed to load page image');
+            };
+            
+            newImage.src = data.image_url;
+            
         } else {
             throw new Error(data.message);
         }
         
     } catch (error) {
-        console.error('Error loading page:', error);
+        console.error(`Error loading page ${pageNum}:`, error);
         showStatus('Failed to load page: ' + error.message, 'error');
-    } finally {
         isLoading = false;
         loadingMessage.style.display = 'none';
-        updateUI();
+    }
+}
+
+async function ensureVisionIndexForPage(pageNum) {
+    const res = await fetch(`/vision_index/${pageNum}`);
+    const data = await res.json();
+    if (!data.success) {
+        console.warn('Vision index init failed:', data.message);
+    } else {
+        console.log(`Vision index ready for page ${pageNum}, tokens: ${data.token_count}`);
     }
 }
 
@@ -326,172 +425,87 @@ function displayBoxAnalysis(analysis, box) {
 }
 
 async function handleImageClick(event) {
-    // Prevent default behavior
     event.preventDefault();
-    
-    // Remove any existing highlight boxes
-    document.querySelectorAll('.word-highlight').forEach(el => el.remove());
-    
-    // Get click coordinates relative to image
+
+    // Add debugging for page mismatch
+    console.log('🔍 Click Debug Info:');
+    console.log('- Frontend currentPage:', currentPage);
+    console.log('- Page display shows:', pageInfo.textContent);
+
     const rect = pdfImage.getBoundingClientRect();
     const clickX = event.clientX - rect.left;
     const clickY = event.clientY - rect.top;
-    
-    // Convert to image coordinates (actual image pixels)
+
     const scaleX = pdfImage.naturalWidth / rect.width;
     const scaleY = pdfImage.naturalHeight / rect.height;
     const imageX = Math.round(clickX * scaleX);
     const imageY = Math.round(clickY * scaleY);
-    
-    console.log(`Click at display (${Math.round(clickX)}, ${Math.round(clickY)}) -> image (${imageX}, ${imageY})`);
-    
-    // Show a soft highlight box around the clicked area
-    showWordHighlight(clickX, clickY);
-    
-    // Show status
-    showStatus(`Looking up word at (${imageX}, ${imageY})...`, 'info', 2000);
-    
-    // Analyze word with AI
+
+    showStatus('Looking up word...', 'info', 1200);
+
+    console.log('- Sending to backend: page_num =', currentPage);
+
     try {
-        const response = await fetch('/analyze_word', {
+        const response = await fetch('/lookup_click', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                page: currentPage,
-                x: imageX,
-                y: imageY,
-                method: 'click'
-            })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ page_num: currentPage, x: imageX, y: imageY })
         });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
-        
-        if (data.success) {
-            displaySimpleDefinition(data.word_info);
-        } else {
-            showDefinitionError('Error: ' + data.error);
+        if (!data.success) {
+            showDefinitionError(data.message || 'Lookup failed');
+            return;
         }
-    } catch (error) {
-        console.error('Error:', error);
-        showDefinitionError('Error analyzing word: ' + error.message);
+        // Remove existing highlight boxes
+        document.querySelectorAll('.word-highlight').forEach(el => el.remove());
+
+        // Map bbox (image px) to display px and draw
+        const left = Math.round(data.bbox.left / scaleX);
+        const top = Math.round(data.bbox.top / scaleY);
+        const width = Math.round(data.bbox.width / scaleX);
+        const height = Math.round(data.bbox.height / scaleY);
+        showWordHighlightRect(left, top, width, height);
+
+        // Build word info for panel
+        const info = parseAnalysisToWordInfo(data.analysis);
+        if (!info.arabic_text) info.arabic_text = data.arabic_text;
+        displaySimpleDefinition(info);
+    } catch (err) {
+        console.error('Lookup error:', err);
+        showDefinitionError('Lookup error: ' + err.message);
     }
 }
 
-function showWordHighlight(x, y) {
+// Draw a highlight by top-left + size (exact rectangle)
+function showWordHighlightRect(left, top, width, height) {
     const container = document.querySelector('.pdf-container');
     const highlight = document.createElement('div');
     highlight.className = 'word-highlight';
-    
-    // Create a soft box around the clicked area (approximately word-sized)
-    const boxSize = 60; // Adjust this size as needed
     highlight.style.cssText = `
         position: absolute;
-        left: ${x - boxSize/2}px;
-        top: ${y - boxSize/2}px;
-        width: ${boxSize}px;
-        height: ${boxSize}px;
-        background: rgba(255, 255, 0, 0.3);
-        border: 2px solid rgba(255, 255, 0, 0.7);
+        left: ${left}px;
+        top: ${top}px;
+        width: ${width}px;
+        height: ${height}px;
+        background: rgba(255, 255, 0, 0.25);
+        border: 2px solid rgba(255, 215, 0, 0.9);
         border-radius: 8px;
-        z-index: 1000;
-        pointer-events: none;
+        z-index: 1200;
+        pointer-events: auto;
+        cursor: pointer;
         animation: pulse 1s ease-in-out;
     `;
-    
+    highlight.title = 'Click to remove';
+    highlight.addEventListener('click', (e) => { e.stopPropagation(); highlight.remove(); });
+    container.style.position = 'relative';
     container.appendChild(highlight);
-    
-    // Remove highlight after 3 seconds
-    setTimeout(() => {
-        if (highlight.parentNode) {
-            highlight.remove();
-        }
-    }, 3000);
 }
 
-function displaySimpleDefinition(wordInfo) {
-    // Remove existing definition display
-    const existingDef = document.getElementById('simple-definition');
-    if (existingDef) {
-        existingDef.remove();
-    }
-    
-    // Create simple definition display below the PDF
-    const definitionDiv = document.createElement('div');
-    definitionDiv.id = 'simple-definition';
-    definitionDiv.style.cssText = `
-        margin: 20px auto;
-        max-width: 800px;
-        padding: 20px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 12px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        font-family: Arial, sans-serif;
-        border: 2px solid rgba(255, 255, 255, 0.2);
-    `;
-    
-    let content = `<h3 style="margin: 0 0 15px 0; color: #fff; text-align: center;">📖 Word Lookup Result</h3>`;
-    
-    if (wordInfo.arabic_text) {
-        content += `<div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-            <strong>Arabic Word:</strong> <span style="font-size: 20px; color: #ffd700;">${wordInfo.arabic_text}</span>
-        </div>`;
-    }
-    
-    if (wordInfo.english_meaning) {
-        content += `<div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-            <strong>English Definition:</strong><br>
-            <span style="font-size: 16px; line-height: 1.4;">${wordInfo.english_meaning}</span>
-        </div>`;
-    }
-    
-    if (wordInfo.confidence) {
-        content += `<div style="text-align: center; opacity: 0.8; font-size: 14px;">
-            Confidence: ${wordInfo.confidence}
-        </div>`;
-    }
-    
-    definitionDiv.innerHTML = content;
-    
-    // Insert after the PDF container
-    const pdfContainer = document.querySelector('.pdf-container');
-    pdfContainer.insertAdjacentElement('afterend', definitionDiv);
-    
-    // Scroll to definition
-    definitionDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
 }
 
-function showDefinitionError(message) {
-    const existingDef = document.getElementById('simple-definition');
-    if (existingDef) {
-        existingDef.remove();
-    }
-    
-    const errorDiv = document.createElement('div');
-    errorDiv.id = 'simple-definition';
-    errorDiv.style.cssText = `
-        margin: 20px auto;
-        max-width: 800px;
-        padding: 20px;
-        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-        color: white;
-        border-radius: 12px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        font-family: Arial, sans-serif;
-        text-align: center;
-    `;
-    
-    errorDiv.innerHTML = `<h3 style="margin: 0 0 10px 0;">❌ Error</h3><p style="margin: 0;">${message}</p>`;
-    
-    const pdfContainer = document.querySelector('.pdf-container');
-    pdfContainer.insertAdjacentElement('afterend', errorDiv);
-}
 function toggleDebugMode() {
     debugMode = !debugMode;
     debugBtn.textContent = debugMode ? '🔍 Debug Mode: ON' : '🔍 Debug Mode: OFF';
@@ -942,6 +956,63 @@ function showDefinitionPanel() {
 
 function hideDefinitionPanel() {
     definitionPanel.classList.add('hidden');
+}
+
+function showDefinitionError(message) {
+    showDefinitionPanel();
+    panelContent.innerHTML = `
+        <div class="definition-item" style="border-left-color: #e74c3c; background: #fdf2f2;">
+            <div style="color: #e74c3c; font-weight: bold;">Error</div>
+            <div style="color: #333; margin-top: 8px;">${message}</div>
+        </div>
+    `;
+}
+
+function parseAnalysisToWordInfo(analysisText) {
+    const clean = (s) => (s || '').replace(/\*\*/g, '').trim();
+    const info = { arabic_text: '', english_meaning: '', confidence: undefined };
+    if (!analysisText) return info;
+    
+    // Allow qualifiers inside parentheses before colon
+    const arabicMatch = analysisText.match(/Arabic\s*Word\s*:\s*(.+)/i) || analysisText.match(/\bWord\s*:\s*(.+)/i);
+    const meaningMatch = analysisText.match(/Meaning(?:[^:]*)\s*:\s*(.+)/i) || analysisText.match(/English\s*Meaning\s*:\s*(.+)/i);
+    const confMatch = analysisText.match(/Confidence\s*:\s*(.+)/i);
+    
+    if (arabicMatch) info.arabic_text = clean(arabicMatch[1]);
+    if (meaningMatch) info.english_meaning = clean(meaningMatch[1]);
+    if (confMatch) info.confidence = clean(confMatch[1]);
+    
+    // Fallback: if parsing failed, show the full analysis as meaning
+    if (!info.arabic_text && !info.english_meaning) {
+        info.english_meaning = clean(analysisText);
+    }
+    return info;
+}
+
+function displaySimpleDefinition(wordInfo) {
+    // Ensure the side panel is visible
+    showDefinitionPanel();
+    
+    // Build simple, clear content for right panel
+    let content = '<div class="word-definition">';
+    if (wordInfo.arabic_text) {
+        content += `
+        <div class="definition-item" style="direction: rtl; text-align: right;">
+            <div style="font-size: 22px; color: #2c3e50;">${wordInfo.arabic_text}</div>
+        </div>`;
+    }
+    if (wordInfo.english_meaning) {
+        content += `
+        <div class="definition-item">
+            <div style="font-size: 16px; line-height: 1.5;">${wordInfo.english_meaning}</div>
+        </div>`;
+    }
+    if (wordInfo.confidence) {
+        content += `<div class="definition-item" style="font-size: 12px; color: #7f8c8d;">Confidence: ${wordInfo.confidence}</div>`;
+    }
+    content += '</div>';
+    
+    panelContent.innerHTML = content;
 }
 
 function showStatus(message, type = 'info', duration = 5000) {

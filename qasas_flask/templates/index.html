@@ -29,6 +29,7 @@
                     <input type="number" id="page-input" min="1" placeholder="Page #...">
                     <button id="zoom-out">Zoom Out -</button>
                     <button id="zoom-in">Zoom In +</button>
+                    <button id="translate-page" style="background: #3498db; color: white;">📖 Translate Page</button>
                     <button id="test-api" style="background: #27ae60;">Test API</button>
                     <span id="page-info">Loading...</span>
                 </div>
@@ -42,14 +43,17 @@
                 </div>
             </div>
 
-            <!-- Definition Panel -->
+            <!-- Analysis Panel -->
             <div class="definition-panel hidden" id="definition-panel">
                 <div class="panel-header">
-                    <h3>Word Analysis</h3>
+                    <h3>Page Translation</h3>
                     <button id="close-panel">×</button>
                 </div>
                 <div class="panel-content" id="panel-content">
-                    <p style="text-align: center;">Click anywhere on the Arabic text to get AI-powered word definitions</p>
+                    <div style="text-align: center; padding: 20px; color: #666;">
+                        <p><strong>📖 Click "Translate Page"</strong> to get AI-powered full page translation</p>
+                        <p style="margin-top: 10px;"><strong>🔍 Click on Arabic text</strong> for individual word analysis</p>
+                    </div>
                 </div>
             </div>
         </div>

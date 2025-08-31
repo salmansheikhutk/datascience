@@ -99,31 +99,47 @@ class AIAnalyzer:
     def __init__(self):
         self.client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
     
-    def analyze_word_at_coordinates(self, image_base64, x, y):
-        """Use GPT-4 Vision to identify Arabic word at given coordinates"""
+    def analyze_word_in_box(self, image_base64, x1, y1, x2, y2, selection_type="box"):
+        """Use GPT-4 Vision to identify Arabic word in selected box area"""
+        
+        # Calculate box dimensions
+        width = abs(x2 - x1)
+        height = abs(y2 - y1)
+        center_x = (x1 + x2) // 2
+        center_y = (y1 + y2) // 2
+        
+        system_prompt = """You are an Arabic language expert. Analyze the image and identify the Arabic word in the highlighted rectangular area.
+
+INSTRUCTIONS:
+1. Look at the rectangular selection area specified by coordinates
+2. Identify the Arabic word(s) within that selected area
+3. If multiple words are in the selection, focus on the most prominent/complete word
+4. Provide a clean, formatted response
+
+Response format:
+**Arabic Word:** [word in Arabic]
+**Transliteration:** [romanized]  
+**Meaning:** [brief English meaning]
+**Type:** [noun/verb/particle/etc.]
+
+Keep it concise and accurate."""
+
         try:
+            selection_desc = f"rectangular selection from ({x1}, {y1}) to ({x2}, {y2})" if selection_type == "box" else f"area around point ({center_x}, {center_y})"
+            
             response = self.client.chat.completions.create(
-                model="gpt-4o",  # Updated to use current GPT-4 with vision
+                model="gpt-4o",
                 messages=[
                     {
-                        "role": "system",
-                        "content": """You are an expert in Arabic language. You will be given an image of an Arabic text page and coordinates where a user clicked. Your tasks:
-
-1. Identify the Arabic word at or near those coordinates
-2. Provide comprehensive explanation including:
-   - Primary meaning
-   - Linguistic root if possible
-   - Usage examples
-   - Additional grammatical information
-
-Make your response clear and helpful for learners. Start with the identified word, then follow with the explanation."""
+                        "role": "system", 
+                        "content": system_prompt
                     },
                     {
                         "role": "user",
                         "content": [
                             {
                                 "type": "text",
-                                "text": f"Please identify the Arabic word at coordinates ({x}, {y}) in this image. If there's no word at that exact point, find the closest Arabic word."
+                                "text": f"Analyze the Arabic text in the {selection_desc}. The selection area is {width}x{height} pixels. Focus on the Arabic word(s) within this specific rectangular region."
                             },
                             {
                                 "type": "image_url",
@@ -135,8 +151,8 @@ Make your response clear and helpful for learners. Start with the identified wor
                         ]
                     }
                 ],
-                max_tokens=800,
-                temperature=0.3
+                max_tokens=200,
+                temperature=0.1
             )
             
             return response.choices[0].message.content
@@ -199,28 +215,41 @@ def get_page(page_num):
 
 @app.route('/analyze_word', methods=['POST'])
 def analyze_word():
-    """Analyze word at given coordinates using AI"""
+    """Analyze Arabic word in selected box area using AI"""
     try:
         data = request.get_json()
         page_num = data.get('page_num')
-        x = data.get('x')
-        y = data.get('y')
         
-        if not all([page_num, x is not None, y is not None]):
-            return jsonify({'success': False, 'message': 'Missing required parameters'})
+        # Handle both single click and box selection
+        if 'box' in data:
+            # Box selection mode
+            box = data.get('box')
+            x1, y1, x2, y2 = box['x1'], box['y1'], box['x2'], box['y2']
+            selection_type = "box"
+        else:
+            # Single click mode (fallback)
+            x = data.get('x')
+            y = data.get('y')
+            x1, y1, x2, y2 = x-10, y-10, x+10, y+10  # Create small box around click
+            selection_type = "click"
+        
+        if not page_num:
+            return jsonify({'success': False, 'message': 'Missing page number'})
         
         # Get page image
         image_base64 = pdf_processor.get_page_image_base64(page_num)
         if not image_base64:
             return jsonify({'success': False, 'message': 'Failed to get page image'})
         
-        # Analyze with AI
+        # Analyze with AI using box coordinates
         try:
-            analysis = ai_analyzer.analyze_word_at_coordinates(image_base64, x, y)
+            analysis = ai_analyzer.analyze_word_in_box(
+                image_base64, x1, y1, x2, y2, selection_type
+            )
             return jsonify({
                 'success': True,
                 'analysis': analysis,
-                'coordinates': {'x': x, 'y': y}
+                'selection': {'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2, 'type': selection_type}
             })
         except Exception as ai_error:
             return jsonify({

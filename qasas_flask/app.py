@@ -260,58 +260,54 @@ def index():
 def load_pdf():
     """Load a PDF file"""
     global current_pdf, current_book_name, total_pages
-    
-    # Default to first book if no selection provided
-    if request.method == 'POST':
-        data = request.get_json()
-        pdf_filename = data.get('pdf_filename', '')
-    else:
-        pdf_filename = ''
+    try:
+        if request.method == 'POST':
+            data = request.get_json(silent=True) or {}
+            pdf_filename = data.get('pdf_filename', '')
+        else:
+            pdf_filename = ''
 
-    # Get available books dynamically
-    available_books = get_available_books()
-    
-    # If no book specified, don't auto-load anything
-    if not pdf_filename:
-        return jsonify({
-            'success': True,
-            'message': 'No book selected. Please choose a book to load.',
-            'books_available': list(available_books.keys())
-        })
+        available_books = get_available_books()
 
-    # Validate book selection
-    if pdf_filename not in available_books:
-        return jsonify({
-            'success': False,
-            'message': f'Invalid book selection: {pdf_filename}',
-            'books_available': list(available_books.keys())
-        })
-
-    book_info = available_books[pdf_filename]
-    pdf_path = os.path.join(app.static_folder, 'pdfs', book_info['filename'])
-    
-    if os.path.exists(pdf_path):
-        total_pages = pdf_processor.load_pdf(pdf_path)
-        if total_pages > 0:
-            current_pdf = pdf_path
-            current_book_name = book_info['title']
-            
-            # Clear caches when switching books
-            vision_cache.clear()
-            translation_cache.clear()
-            
+        if not pdf_filename:
             return jsonify({
                 'success': True,
-                'total_pages': total_pages,
-                'book_title': current_book_name,
-                'filename': pdf_filename,
-                'message': f'{current_book_name} loaded successfully with {total_pages} pages'
+                'message': 'No book selected. Please choose a book to load.',
+                'books_available': list(available_books.keys())
             })
-    
-    return jsonify({
-        'success': False,
-        'message': f'Failed to load PDF file: {pdf_filename}'
-    })
+
+        if pdf_filename not in available_books:
+            return jsonify({
+                'success': False,
+                'message': f'Invalid book selection: {pdf_filename}',
+                'books_available': list(available_books.keys())
+            })
+
+        book_title = available_books[pdf_filename]
+        pdf_path = os.path.join(app.static_folder, 'pdfs', pdf_filename)
+        if os.path.exists(pdf_path):
+            pages = pdf_processor.load_pdf(pdf_path)
+            if pages > 0:
+                total_pages = pages
+                current_pdf = pdf_path
+                current_book_name = book_title
+                vision_cache.clear()
+                translation_cache.clear()
+                return jsonify({
+                    'success': True,
+                    'total_pages': total_pages,
+                    'book_title': current_book_name,
+                    'filename': pdf_filename,
+                    'message': f'{current_book_name} loaded successfully with {total_pages} pages'
+                })
+            else:
+                return jsonify({'success': False, 'message': f'Failed to load PDF file: {pdf_filename}'})
+        else:
+            return jsonify({'success': False, 'message': f'PDF not found on disk: {pdf_filename}'})
+    except Exception as e:
+        print(f"ERROR in load_pdf: {e}")
+        import traceback; traceback.print_exc()
+        return jsonify({'success': False, 'message': f'Exception loading PDF: {str(e)}'})
 
 @app.route('/get_books')
 def get_books():
@@ -332,53 +328,44 @@ def get_book_cover(book_filename):
         available_books = get_available_books()
         if book_filename not in available_books:
             return jsonify({'success': False, 'message': 'Book not found'})
-        
         pdf_path = os.path.join(app.static_folder, 'pdfs', book_filename)
         if not os.path.exists(pdf_path):
             return jsonify({'success': False, 'message': 'PDF file not found'})
-        
-        print(f"Loading cover for: {book_filename} at {pdf_path}")
-        
+
         # Create temporary processor to get first page
         temp_processor = PDFProcessor()
         pages_loaded = temp_processor.load_pdf(pdf_path)
-        
         if pages_loaded == 0:
-            print(f"Failed to load PDF: {book_filename}")
             return jsonify({'success': False, 'message': 'Failed to load PDF'})
-        
-        print(f"PDF loaded with {pages_loaded} pages")
-        
-        # Get first page as base64
-        image_base64 = temp_processor.get_page_image_base64(1)
-        if image_base64:
-            print(f"Successfully generated cover image for {book_filename}")
-            return jsonify({
-                'success': True,
-                'image_url': image_base64,
-                'book_title': available_books[book_filename],
-                'filename': book_filename
-            })
-        else:
-            print(f"Failed to generate cover image for {book_filename}")
-            return jsonify({'success': False, 'message': 'Failed to generate cover image'})
-    
+
+        # Try multiple DPIs for reliability
+        for dpi in (150, 120, 100):
+            image_base64 = temp_processor.get_page_image_base64(1, dpi=dpi)
+            if image_base64:
+                return jsonify({
+                    'success': True,
+                    'image_url': image_base64,
+                    'book_title': available_books[book_filename],
+                    'filename': book_filename
+                })
+        return jsonify({'success': False, 'message': 'Failed to generate cover image'})
     except Exception as e:
-        print(f"Error in get_book_cover: {str(e)}")
         return jsonify({'success': False, 'message': f'Error: {str(e)}'})
 
 @app.route('/get_page/<int:page_num>')
 def get_page(page_num):
     """Get specific page as image"""
-    # Get optional parameters for cache busting
     book_param = request.args.get('book', '')
     timestamp = request.args.get('t', '')
-    
     if not current_pdf or page_num < 1 or page_num > total_pages:
         return jsonify({'success': False, 'message': 'Invalid page number'})
-    
     try:
-        image_base64 = pdf_processor.get_page_image_base64(page_num)
+        # Try a few DPIs to improve reliability/performance
+        image_base64 = None
+        for dpi in (180, 150, 120):
+            image_base64 = pdf_processor.get_page_image_base64(page_num, dpi=dpi)
+            if image_base64:
+                break
         if image_base64:
             response = jsonify({
                 'success': True,
@@ -388,15 +375,15 @@ def get_page(page_num):
                 'book_name': current_book_name,
                 'timestamp': timestamp
             })
-            # Add headers to prevent caching
             response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
             response.headers['Pragma'] = 'no-cache'
             response.headers['Expires'] = '0'
             return response
         else:
             return jsonify({'success': False, 'message': 'Failed to generate page image'})
-    
     except Exception as e:
+        print(f"ERROR in get_page({page_num}): {e}")
+        import traceback; traceback.print_exc()
         return jsonify({'success': False, 'message': f'Error: {str(e)}'})
 
 @app.route('/vision_index/<int:page_num>')

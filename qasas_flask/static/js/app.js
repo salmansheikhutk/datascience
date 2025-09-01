@@ -110,26 +110,31 @@ async function showGalleryView() {
 
 async function loadBookCoverImage(bookCoverElement, filename, title) {
     try {
+        console.log(`Loading cover for: ${filename}`);
         const response = await fetch(`/get_book_cover/${filename}`);
-        const data = await response.json();
-        
+        const raw = await response.text();
+        let data;
+        try { data = JSON.parse(raw); } catch (e) {
+            console.error('Non-JSON cover response for', filename, raw);
+            throw new Error('Invalid cover response');
+        }
+        console.log(`Cover response for ${filename}:`, data);
         if (data.success && data.image_url) {
-            // Replace placeholder with actual image
             bookCoverElement.innerHTML = `
-                <img src="${data.image_url}" alt="${title}" loading="lazy">
+                <img src="${data.image_url}" alt="${title}" loading="lazy" 
+                     onerror="this.parentElement.innerHTML='<div class=\\"book-cover-error\\">Image failed to load</div><div class=\\"book-title\\">${title}</div>'">
                 <div class="book-title">${title}</div>
             `;
         } else {
-            // Show error state
             bookCoverElement.innerHTML = `
-                <div class="book-cover-error">Failed to load cover</div>
+                <div class="book-cover-error">Failed to load cover<br><small>${(data && data.message) || 'Unknown error'}</small></div>
                 <div class="book-title">${title}</div>
             `;
         }
     } catch (error) {
         console.error(`Error loading cover for ${filename}:`, error);
         bookCoverElement.innerHTML = `
-            <div class="book-cover-error">Error loading cover</div>
+            <div class="book-cover-error">Network error loading cover</div>
             <div class="book-title">${title}</div>
         `;
     }
@@ -274,58 +279,41 @@ async function loadAvailableBooks() {
 
 async function loadPDF(selectedBook = null, bookTitle = null) {
     console.log('Loading PDF...');
-    
-    // Use provided book or fall back to selector value
     const bookToLoad = selectedBook || bookSelector.value;
     console.log('Selected book:', bookToLoad);
-    
     if (!bookToLoad) {
         console.log('No book selected');
         return;
     }
-    
     showStatus('Loading PDF...', 'info');
-    
     try {
         const response = await fetch('/load_pdf', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                pdf_filename: bookToLoad
-            })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pdf_filename: bookToLoad })
         });
-        const data = await response.json();
-        
+        let data;
+        const raw = await response.text();
+        try { data = JSON.parse(raw); } catch (e) {
+            console.error('Non-JSON response from /load_pdf:', raw);
+            throw new Error('Server returned invalid JSON');
+        }
         console.log('DEBUG: Response from server:', data);
-        
-        if (data.success) {
+        if (response.ok && data.success) {
             totalPages = data.total_pages;
-            console.log(`PDF loaded: ${totalPages} pages`);
-            console.log(`Previous totalPages was updated to: ${totalPages}`);
             showStatus(`${bookTitle || data.book_title} loaded successfully: ${totalPages} pages`, 'success');
-            
-            // Load first page
             await loadPage(1);
             updateUI();
-            
-            // Enable navigation and features
             translatePageBtn.disabled = false;
-            
-            console.log(`After updateUI - currentPage: ${currentPage}, totalPages: ${totalPages}`);
-            
-            // Update book selector to match loaded book
-            if (bookSelector) {
-                bookSelector.value = bookToLoad;
-            }
+            if (bookSelector) bookSelector.value = data.filename;
         } else {
-            throw new Error(data.message);
+            const msg = data && data.message ? data.message : 'Failed to load PDF';
+            showStatus(msg, 'error');
+            throw new Error(msg);
         }
-        
     } catch (error) {
         console.error('Error loading PDF:', error);
-        showStatus('Failed to load PDF: ' + error.message, 'error');
+        showStatus(`Failed to load PDF: ${error.message}`, 'error');
     }
 }
 

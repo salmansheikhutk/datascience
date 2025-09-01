@@ -9,15 +9,8 @@
 <body>
     <div class="container">
         <!-- Header -->
-                <div class="header">
+        <div class="header">
             <h1>🕌 Interactive Arabic Reader</h1>
-            <div style="margin: 10px 0;">
-                <label for="book-selector" style="font-weight: bold; margin-right: 10px;">📚 Select Book:</label>
-                <select id="book-selector" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 14px; background: white;">
-                    <option value="Qasas-ul-Anbiya-Part-1.pdf">قصص الأنبياء - Qasas ul-Anbiya (Part 1)</option>
-                    <option value="sharh-arbaoon-nawawi-uthaymeen.pdf">شرح الأربعون النووية - Sharh Arba'een Nawawi (Uthaymeen)</option>
-                </select>
-            </div>
             <p>Interactive Arabic Reader with AI-Powered Word Recognition</p>
             <p><small>💡 <strong>Instructions:</strong> 
                 <span style="background: #e8f6f3; padding: 2px 6px; border-radius: 3px; margin: 2px;">📦 Drag to select</span> a box around Arabic text OR 
@@ -40,11 +33,6 @@
             <div class="pdf-section" id="pdf-section" style="display: none;">
                 <div class="pdf-controls">
                     <button id="back-to-gallery" style="background: #95a5a6; color: white; margin-right: 10px;">← Back to Gallery</button>
-                    <div class="book-selector">
-                        <select id="book-selector">
-                            <option value="">Choose a book...</option>
-                        </select>
-                    </div>
                     <button id="prev-page" disabled>← Previous Page</button>
                     <button id="next-page" disabled>Next Page →</button>
                     <input type="number" id="page-input" min="1" placeholder="Page #...">

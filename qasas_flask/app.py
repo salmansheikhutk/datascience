@@ -347,34 +347,56 @@ def get_books():
 
 @app.route('/get_book_cover/<book_filename>')
 def get_book_cover(book_filename):
-    """Get the first page (cover) of a book as preview"""
+    """Get book cover (first page) as base64 image with enhanced error handling."""
     try:
-        available_books = get_available_books()
-        if book_filename not in available_books:
-            return jsonify({'success': False, 'message': 'Book not found'})
+        print(f"📚 Getting cover for: {book_filename}")
+        
         pdf_path = os.path.join(app.static_folder, 'pdfs', book_filename)
         if not os.path.exists(pdf_path):
-            return jsonify({'success': False, 'message': 'PDF file not found'})
-
-        # Create temporary processor to get first page
-        temp_processor = PDFProcessor()
-        pages_loaded = temp_processor.load_pdf(pdf_path)
-        if pages_loaded == 0:
-            return jsonify({'success': False, 'message': 'Failed to load PDF'})
-
-        # Try multiple DPIs for reliability
-        for dpi in (150, 120, 100):
-            image_base64 = temp_processor.get_page_image_base64(1, dpi=dpi)
-            if image_base64:
-                return jsonify({
-                    'success': True,
-                    'image_url': image_base64,
-                    'book_title': available_books[book_filename],
-                    'filename': book_filename
-                })
-        return jsonify({'success': False, 'message': 'Failed to generate cover image'})
+            print(f"❌ PDF file not found: {pdf_path}")
+            return jsonify({'success': False, 'message': 'PDF file not found'}), 404
+        
+        print(f"✅ PDF exists, converting first page to image...")
+        
+        # Try different DPIs for robustness
+        for dpi in [100, 80, 120]:
+            try:
+                print(f"🔄 Trying DPI: {dpi}")
+                images = convert_from_path(pdf_path, first_page=1, last_page=1, dpi=dpi)
+                if images:
+                    image = images[0]
+                    print(f"✅ Successfully converted at DPI {dpi}, image size: {image.size}")
+                    break
+            except Exception as e:
+                print(f"❌ Failed at DPI {dpi}: {e}")
+                continue
+        else:
+            print(f"❌ All DPI attempts failed for {book_filename}")
+            return jsonify({'success': False, 'message': 'Failed to convert PDF to image'}), 500
+        
+        # Convert to base64
+        import io, base64
+        buf = io.BytesIO()
+        image.save(buf, format='PNG')
+        img_b64 = base64.b64encode(buf.getvalue()).decode()
+        
+        print(f"✅ Cover generated successfully, base64 length: {len(img_b64)}")
+        
+        return jsonify({
+            'success': True,
+            'image_base64': f"data:image/png;base64,{img_b64}",
+            'filename': book_filename
+        }), 200, {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+        }
+        
     except Exception as e:
-        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+        print(f"❌ Error getting cover for {book_filename}: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
 
 @app.route('/get_page/<int:page_num>')
 def get_page(page_num):
@@ -604,4 +626,4 @@ if __name__ == '__main__':
     if not os.getenv('OPENAI_API_KEY'):
         print("Warning: OPENAI_API_KEY not found in environment variables")
     
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    app.run(debug=True, host='0.0.0.0', port=5000)

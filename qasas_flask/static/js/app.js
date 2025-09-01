@@ -1,6 +1,7 @@
 // Global variables
 let currentPage = 1;
 let totalPages = 0;
+let currentBook = null;
 let isLoading = false;
 let debugMode = false;
 let isSelecting = false;
@@ -16,7 +17,6 @@ const zoomInBtn = document.getElementById('zoom-in');
 const zoomOutBtn = document.getElementById('zoom-out');
 const translatePageBtn = document.getElementById('translate-page');
 const testApiBtn = document.getElementById('test-api');
-const bookSelector = document.getElementById('book-selector');
 const pageInfo = document.getElementById('page-info');
 const pdfImage = document.getElementById('pdf-image');
 const loadingMessage = document.getElementById('loading-message');
@@ -41,7 +41,6 @@ async function initializeApp() {
     zoomOutBtn.addEventListener('click', zoomOut);
     translatePageBtn.addEventListener('click', () => loadPageTranslation(currentPage));
     testApiBtn.addEventListener('click', testApiConnection);
-    bookSelector.addEventListener('change', handleBookChange);
     closePanel.addEventListener('click', hideDefinitionPanel);
     debugBtn.addEventListener('click', toggleDebugMode);
     
@@ -269,22 +268,8 @@ async function loadAvailableBooks() {
         const data = await response.json();
         
         if (data.success) {
-            // Clear existing options
-            bookSelector.innerHTML = '';
-            
-            // Add default "Select Book" option
-            const defaultOption = document.createElement('option');
-            defaultOption.value = '';
-            defaultOption.textContent = '📚 Select a book to read...';
-            bookSelector.appendChild(defaultOption);
-            
-            // Populate with available books
-            for (const [filename, bookInfo] of Object.entries(data.books)) {
-                const option = document.createElement('option');
-                option.value = filename;
-                option.textContent = bookInfo.title;
-                bookSelector.appendChild(option);
-            }
+            console.log('Available books loaded:', Object.keys(data.books));
+            // Note: We use gallery view now, no book selector dropdown
         }
     } catch (error) {
         console.error('Error loading available books:', error);
@@ -293,12 +278,8 @@ async function loadAvailableBooks() {
 
 async function loadPDF(selectedBook = null, bookTitle = null) {
     console.log('Loading PDF...');
-    const bookToLoad = selectedBook || bookSelector.value;
+    const bookToLoad = selectedBook || 'default';
     console.log('Selected book:', bookToLoad);
-    if (!bookToLoad) {
-        console.log('No book selected');
-        return;
-    }
     showStatus('Loading PDF...', 'info');
     try {
         const response = await fetch('/load_pdf', {
@@ -319,7 +300,6 @@ async function loadPDF(selectedBook = null, bookTitle = null) {
             await loadPage(1);
             updateUI();
             translatePageBtn.disabled = false;
-            if (bookSelector) bookSelector.value = data.filename;
         } else {
             const msg = data && data.message ? data.message : 'Failed to load PDF';
             showStatus(msg, 'error');
@@ -328,44 +308,6 @@ async function loadPDF(selectedBook = null, bookTitle = null) {
     } catch (error) {
         console.error('Error loading PDF:', error);
         showStatus(`Failed to load PDF: ${error.message}`, 'error');
-    }
-}
-
-async function handleBookChange() {
-    console.log('Book selector changed to:', bookSelector.value);
-    
-    if (!bookSelector.value) {
-        // No book selected, show gallery
-        await showGalleryView();
-        return;
-    }
-    
-    // Show PDF section if not already visible
-    const pdfSection = document.getElementById('pdf-section');
-    const gallerySection = document.getElementById('books-gallery');
-    
-    if (gallerySection) gallerySection.style.display = 'none';
-    if (pdfSection) pdfSection.style.display = 'block';
-    
-    // Show loading state
-    bookSelector.disabled = true;
-    showStatus('Loading book...', 'info');
-    
-    // Clear any existing translation panel
-    hideDefinitionPanel();
-    
-    // Reset current page
-    currentPage = 1;
-    
-    try {
-        // Load the selected book
-        await loadPDF();
-        showStatus('Book loaded successfully!', 'success');
-    } catch (error) {
-        console.error('Error loading book:', error);
-        showStatus('Failed to load book: ' + error.message, 'error');
-    } finally {
-        bookSelector.disabled = false;
     }
 }
 
@@ -695,8 +637,8 @@ async function loadPage(pageNum) {
         console.log(`Loading page ${pageNum}...`);
         
         // Add cache-busting parameter with current book
-        const currentBook = bookSelector.value || 'default';
-        const response = await fetch(`/get_page/${pageNum}?book=${encodeURIComponent(currentBook)}&t=${Date.now()}`);
+        const currentBookParam = currentBook || 'default';
+        const response = await fetch(`/get_page/${pageNum}?book=${encodeURIComponent(currentBookParam)}&t=${Date.now()}`);
         const data = await response.json();
         
         if (data.success) {

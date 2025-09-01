@@ -32,10 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
 async function initializeApp() {
     console.log('Initializing Qasas Flask App...');
     
-    // Load available books first
-    await loadAvailableBooks();
-    
-    // Event listeners
+    // Event listeners for PDF navigation
     prevBtn.addEventListener('click', showPrevPage);
     nextBtn.addEventListener('click', showNextPage);
     zoomInBtn.addEventListener('click', zoomIn);
@@ -45,6 +42,12 @@ async function initializeApp() {
     bookSelector.addEventListener('change', handleBookChange);
     closePanel.addEventListener('click', hideDefinitionPanel);
     debugBtn.addEventListener('click', toggleDebugMode);
+    
+    // Back to gallery button
+    const backToGalleryBtn = document.getElementById('back-to-gallery');
+    if (backToGalleryBtn) {
+        backToGalleryBtn.addEventListener('click', showGalleryView);
+    }
     
     pageInput.addEventListener('change', function() {
         const page = parseInt(this.value);
@@ -85,8 +88,160 @@ async function initializeApp() {
     pdfImage.addEventListener('mouseup', handleMouseUp);
     pdfImage.addEventListener('click', handleImageClick);
     
-    // Load PDF
-    await loadPDF();
+    // Show gallery view on startup (no auto-load)
+    await showGalleryView();
+    
+    // Also populate the book selector for the PDF section
+    await loadAvailableBooks();
+}
+
+async function showGalleryView() {
+    console.log('Showing gallery view...');
+    
+    // Hide PDF section and show gallery
+    const pdfSection = document.getElementById('pdf-section');
+    const gallerySection = document.getElementById('books-gallery');
+    
+    if (pdfSection) pdfSection.style.display = 'none';
+    if (gallerySection) gallerySection.style.display = 'block';
+    
+    await loadBooksGallery();
+}
+
+async function loadBookCoverImage(bookCoverElement, filename, title) {
+    try {
+        const response = await fetch(`/get_book_cover/${filename}`);
+        const data = await response.json();
+        
+        if (data.success && data.image_url) {
+            // Replace placeholder with actual image
+            bookCoverElement.innerHTML = `
+                <img src="${data.image_url}" alt="${title}" loading="lazy">
+                <div class="book-title">${title}</div>
+            `;
+        } else {
+            // Show error state
+            bookCoverElement.innerHTML = `
+                <div class="book-cover-error">Failed to load cover</div>
+                <div class="book-title">${title}</div>
+            `;
+        }
+    } catch (error) {
+        console.error(`Error loading cover for ${filename}:`, error);
+        bookCoverElement.innerHTML = `
+            <div class="book-cover-error">Error loading cover</div>
+            <div class="book-title">${title}</div>
+        `;
+    }
+}
+
+async function loadBooksGallery() {
+    console.log('Loading books gallery...');
+    
+    const booksGrid = document.getElementById('books-grid');
+    if (!booksGrid) {
+        console.error('Books grid element not found');
+        return;
+    }
+    
+    try {
+        // Show loading state
+        booksGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #666;">Loading books...</div>';
+        
+        const response = await fetch('/get_books');
+        const data = await response.json();
+        
+        if (data.success && Object.keys(data.books).length > 0) {
+            booksGrid.innerHTML = ''; // Clear loading message
+            
+            // Create book cover elements
+            for (const [filename, title] of Object.entries(data.books)) {
+                const bookCover = document.createElement('div');
+                bookCover.className = 'book-cover';
+                bookCover.setAttribute('data-book', filename);
+                
+                // Create placeholder content first
+                bookCover.innerHTML = `
+                    <div class="book-cover-placeholder">Loading...</div>
+                    <div class="book-title">${title}</div>
+                `;
+                
+                // Add click handler to load the book
+                bookCover.addEventListener('click', () => loadBookFromGallery(filename, title));
+                
+                booksGrid.appendChild(bookCover);
+                
+                // Load the actual cover image
+                loadBookCoverImage(bookCover, filename, title);
+            }
+            
+            console.log(`Loaded ${Object.keys(data.books).length} books in gallery`);
+        } else {
+            booksGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #666;">No books found in the pdfs folder.</div>';
+        }
+    } catch (error) {
+        console.error('Error loading books gallery:', error);
+        booksGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #e74c3c;">Failed to load books gallery.</div>';
+    }
+}
+
+async function loadBookFromGallery(filename, title) {
+    console.log(`Loading book from gallery: ${filename}`);
+    
+    // Show loading state on the clicked book cover
+    const bookCover = document.querySelector(`[data-book="${filename}"]`);
+    if (bookCover) {
+        bookCover.classList.add('loading');
+    }
+    
+    try {
+        // Hide gallery and show PDF section
+        const pdfSection = document.getElementById('pdf-section');
+        const gallerySection = document.getElementById('books-gallery');
+        
+        if (gallerySection) gallerySection.style.display = 'none';
+        if (pdfSection) pdfSection.style.display = 'block';
+        
+        // Load the selected book
+        await loadPDF(filename, title);
+        
+    } catch (error) {
+        console.error('Error loading book:', error);
+        showStatus('Failed to load book: ' + error.message, 'error');
+        
+        // Remove loading state
+        if (bookCover) {
+            bookCover.classList.remove('loading');
+        }
+    }
+}
+
+async function showBookCover(bookFilename) {
+    try {
+        const response = await fetch(`/get_book_cover/${bookFilename}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            pdfImage.src = data.image_url;
+            pdfImage.style.display = 'block';
+            loadingMessage.style.display = 'none';
+            
+            // Update UI to show this is just a cover
+            pageInfo.textContent = `Cover: ${data.book_title}`;
+            
+            // Disable navigation buttons since this is just a cover
+            prevBtn.disabled = true;
+            nextBtn.disabled = true;
+            translatePageBtn.disabled = true;
+            
+            console.log(`Showing cover for: ${data.book_title}`);
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        console.error('Error loading book cover:', error);
+        showStatus('Failed to load book cover: ' + error.message, 'error');
+    }
 }
 
 async function loadAvailableBooks() {
@@ -97,6 +252,12 @@ async function loadAvailableBooks() {
         if (data.success) {
             // Clear existing options
             bookSelector.innerHTML = '';
+            
+            // Add default "Select Book" option
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = '📚 Select a book to read...';
+            bookSelector.appendChild(defaultOption);
             
             // Populate with available books
             for (const [filename, bookInfo] of Object.entries(data.books)) {
@@ -111,10 +272,18 @@ async function loadAvailableBooks() {
     }
 }
 
-async function loadPDF() {
+async function loadPDF(selectedBook = null, bookTitle = null) {
     console.log('Loading PDF...');
-    const selectedBook = bookSelector.value;
-    console.log('Selected book:', selectedBook);
+    
+    // Use provided book or fall back to selector value
+    const bookToLoad = selectedBook || bookSelector.value;
+    console.log('Selected book:', bookToLoad);
+    
+    if (!bookToLoad) {
+        console.log('No book selected');
+        return;
+    }
+    
     showStatus('Loading PDF...', 'info');
     
     try {
@@ -124,7 +293,7 @@ async function loadPDF() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                pdf_filename: selectedBook
+                pdf_filename: bookToLoad
             })
         });
         const data = await response.json();
@@ -134,11 +303,22 @@ async function loadPDF() {
         if (data.success) {
             totalPages = data.total_pages;
             console.log(`PDF loaded: ${totalPages} pages`);
-            showStatus(`${data.book_title} loaded successfully: ${totalPages} pages`, 'success');
+            console.log(`Previous totalPages was updated to: ${totalPages}`);
+            showStatus(`${bookTitle || data.book_title} loaded successfully: ${totalPages} pages`, 'success');
             
             // Load first page
             await loadPage(1);
             updateUI();
+            
+            // Enable navigation and features
+            translatePageBtn.disabled = false;
+            
+            console.log(`After updateUI - currentPage: ${currentPage}, totalPages: ${totalPages}`);
+            
+            // Update book selector to match loaded book
+            if (bookSelector) {
+                bookSelector.value = bookToLoad;
+            }
         } else {
             throw new Error(data.message);
         }
@@ -152,9 +332,22 @@ async function loadPDF() {
 async function handleBookChange() {
     console.log('Book selector changed to:', bookSelector.value);
     
+    if (!bookSelector.value) {
+        // No book selected, show gallery
+        await showGalleryView();
+        return;
+    }
+    
+    // Show PDF section if not already visible
+    const pdfSection = document.getElementById('pdf-section');
+    const gallerySection = document.getElementById('books-gallery');
+    
+    if (gallerySection) gallerySection.style.display = 'none';
+    if (pdfSection) pdfSection.style.display = 'block';
+    
     // Show loading state
     bookSelector.disabled = true;
-    showStatus('Switching books...', 'info');
+    showStatus('Loading book...', 'info');
     
     // Clear any existing translation panel
     hideDefinitionPanel();
@@ -163,12 +356,12 @@ async function handleBookChange() {
     currentPage = 1;
     
     try {
-        // Load the new PDF
+        // Load the selected book
         await loadPDF();
-        showStatus('Book switched successfully!', 'success');
+        showStatus('Book loaded successfully!', 'success');
     } catch (error) {
-        console.error('Error switching books:', error);
-        showStatus('Failed to switch books: ' + error.message, 'error');
+        console.error('Error loading book:', error);
+        showStatus('Failed to load book: ' + error.message, 'error');
     } finally {
         bookSelector.disabled = false;
     }
@@ -1037,6 +1230,8 @@ function updateUI() {
     // Update navigation buttons
     prevBtn.disabled = currentPage <= 1 || isLoading;
     nextBtn.disabled = currentPage >= totalPages || isLoading;
+    
+    console.log(`UpdateUI: currentPage=${currentPage}, totalPages=${totalPages}, prevBtn.disabled=${prevBtn.disabled}, nextBtn.disabled=${nextBtn.disabled}`);
     
     // Update page input
     pageInput.value = currentPage;

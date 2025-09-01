@@ -28,9 +28,23 @@
 
         <!-- Main Content -->
         <div class="main-content">
+            <!-- Books Gallery Section -->
+            <div class="books-gallery" id="books-gallery">
+                <h2>📚 Available Books</h2>
+                <div class="books-grid" id="books-grid">
+                    <!-- Book covers will be loaded here -->
+                </div>
+            </div>
+
             <!-- PDF Viewer Section -->
-            <div class="pdf-section">
+            <div class="pdf-section" id="pdf-section" style="display: none;">
                 <div class="pdf-controls">
+                    <button id="back-to-gallery" style="background: #95a5a6; color: white; margin-right: 10px;">← Back to Gallery</button>
+                    <div class="book-selector">
+                        <select id="book-selector">
+                            <option value="">Choose a book...</option>
+                        </select>
+                    </div>
                     <button id="prev-page" disabled>← Previous Page</button>
                     <button id="next-page" disabled>Next Page →</button>
                     <input type="number" id="page-input" min="1" placeholder="Page #...">

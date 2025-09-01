@@ -388,3 +388,105 @@ body {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* Book selector styles */
+.book-selector {
+    margin: 0 10px;
+}
+
+.book-selector select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.book-selector select:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+/* Books Gallery Styles */
+.books-gallery {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.books-gallery h2 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    font-size: 2em;
+}
+
+.books-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin: 0 auto;
+    max-width: 1200px;
+    padding: 0 20px;
+}
+
+.book-cover {
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    position: relative;
+}
+
+.book-cover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    border-color: #3498db;
+}
+
+.book-cover img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+    display: block;
+}
+
+.book-cover-placeholder, .book-cover-error {
+    width: 100%;
+    height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    color: #666;
+    font-size: 14px;
+}
+
+.book-title {
+    padding: 15px 10px;
+    font-weight: bold;
+    color: #2c3e50;
+    font-size: 14px;
+    text-align: center;
+    background: #ecf0f1;
+    border-top: 1px solid #ddd;
+}
+
+/* Loading states */
+.book-cover.loading {
+    opacity: 0.7;
+}
+
+.book-cover.loading::after {
+    content: "Loading...";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+}

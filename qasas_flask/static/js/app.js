@@ -132,22 +132,20 @@ async function loadBookCoverImage(bookCoverElement, filename, title) {
             throw new Error('Invalid cover response');
         }
         console.log(`Cover response for ${filename}:`, data);
-        if (data.success && data.image_url) {
+        if (data.success && data.image_base64) {
             bookCoverElement.innerHTML = `
-                <img src="${data.image_url}" alt="${title}" loading="lazy" 
-                     onerror="this.parentElement.innerHTML='<div class=\\"book-cover-error\\">Image failed to load</div><div class=\\"book-title\\">${title}</div>'">
+                <img src="${data.image_base64}" alt="${title}" loading="lazy" 
+                     onerror="this.style.display='none'">
                 <div class="book-title">${title}</div>
             `;
         } else {
             bookCoverElement.innerHTML = `
-                <div class="book-cover-error">Failed to load cover<br><small>${(data && data.message) || 'Unknown error'}</small></div>
                 <div class="book-title">${title}</div>
             `;
         }
     } catch (error) {
         console.error(`Error loading cover for ${filename}:`, error);
         bookCoverElement.innerHTML = `
-            <div class="book-cover-error">Network error loading cover</div>
             <div class="book-title">${title}</div>
         `;
     }

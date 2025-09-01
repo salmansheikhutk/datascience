@@ -40,6 +40,37 @@ body {
     font-size: 1.1rem;
 }
 
+/* Book selector */
+#book-selector {
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 2px solid #3498db;
+    font-size: 14px;
+    background: white;
+    color: #2c3e50;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 300px;
+}
+
+#book-selector:hover {
+    border-color: #2980b9;
+    box-shadow: 0 2px 5px rgba(52, 152, 219, 0.2);
+}
+
+#book-selector:focus {
+    outline: none;
+    border-color: #2980b9;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+#book-selector:disabled {
+    background: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+    border-color: #dee2e6;
+}
+
 /* Main Content Layout */
 .main-content {
     display: grid;

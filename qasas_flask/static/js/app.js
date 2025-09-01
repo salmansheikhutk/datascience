@@ -15,6 +15,7 @@ const zoomInBtn = document.getElementById('zoom-in');
 const zoomOutBtn = document.getElementById('zoom-out');
 const translatePageBtn = document.getElementById('translate-page');
 const testApiBtn = document.getElementById('test-api');
+const bookSelector = document.getElementById('book-selector');
 const pageInfo = document.getElementById('page-info');
 const pdfImage = document.getElementById('pdf-image');
 const loadingMessage = document.getElementById('loading-message');
@@ -31,6 +32,9 @@ document.addEventListener('DOMContentLoaded', function() {
 async function initializeApp() {
     console.log('Initializing Qasas Flask App...');
     
+    // Load available books first
+    await loadAvailableBooks();
+    
     // Event listeners
     prevBtn.addEventListener('click', showPrevPage);
     nextBtn.addEventListener('click', showNextPage);
@@ -38,6 +42,7 @@ async function initializeApp() {
     zoomOutBtn.addEventListener('click', zoomOut);
     translatePageBtn.addEventListener('click', () => loadPageTranslation(currentPage));
     testApiBtn.addEventListener('click', testApiConnection);
+    bookSelector.addEventListener('change', handleBookChange);
     closePanel.addEventListener('click', hideDefinitionPanel);
     debugBtn.addEventListener('click', toggleDebugMode);
     
@@ -84,18 +89,52 @@ async function initializeApp() {
     await loadPDF();
 }
 
+async function loadAvailableBooks() {
+    try {
+        const response = await fetch('/get_books');
+        const data = await response.json();
+        
+        if (data.success) {
+            // Clear existing options
+            bookSelector.innerHTML = '';
+            
+            // Populate with available books
+            for (const [filename, bookInfo] of Object.entries(data.books)) {
+                const option = document.createElement('option');
+                option.value = filename;
+                option.textContent = bookInfo.title;
+                bookSelector.appendChild(option);
+            }
+        }
+    } catch (error) {
+        console.error('Error loading available books:', error);
+    }
+}
+
 async function loadPDF() {
     console.log('Loading PDF...');
+    const selectedBook = bookSelector.value;
+    console.log('Selected book:', selectedBook);
     showStatus('Loading PDF...', 'info');
     
     try {
-        const response = await fetch('/load_pdf');
+        const response = await fetch('/load_pdf', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                pdf_filename: selectedBook
+            })
+        });
         const data = await response.json();
+        
+        console.log('DEBUG: Response from server:', data);
         
         if (data.success) {
             totalPages = data.total_pages;
             console.log(`PDF loaded: ${totalPages} pages`);
-            showStatus(`PDF loaded successfully: ${totalPages} pages`, 'success');
+            showStatus(`${data.book_title} loaded successfully: ${totalPages} pages`, 'success');
             
             // Load first page
             await loadPage(1);
@@ -107,6 +146,31 @@ async function loadPDF() {
     } catch (error) {
         console.error('Error loading PDF:', error);
         showStatus('Failed to load PDF: ' + error.message, 'error');
+    }
+}
+
+async function handleBookChange() {
+    console.log('Book selector changed to:', bookSelector.value);
+    
+    // Show loading state
+    bookSelector.disabled = true;
+    showStatus('Switching books...', 'info');
+    
+    // Clear any existing translation panel
+    hideDefinitionPanel();
+    
+    // Reset current page
+    currentPage = 1;
+    
+    try {
+        // Load the new PDF
+        await loadPDF();
+        showStatus('Book switched successfully!', 'success');
+    } catch (error) {
+        console.error('Error switching books:', error);
+        showStatus('Failed to switch books: ' + error.message, 'error');
+    } finally {
+        bookSelector.disabled = false;
     }
 }
 
@@ -198,7 +262,9 @@ async function loadPage(pageNum) {
     try {
         console.log(`Loading page ${pageNum}...`);
         
-        const response = await fetch(`/get_page/${pageNum}`);
+        // Add cache-busting parameter with current book
+        const currentBook = bookSelector.value || 'default';
+        const response = await fetch(`/get_page/${pageNum}?book=${encodeURIComponent(currentBook)}&t=${Date.now()}`);
         const data = await response.json();
         
         if (data.success) {

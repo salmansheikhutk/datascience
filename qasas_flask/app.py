@@ -26,7 +26,20 @@ openai.api_key = os.getenv('OPENAI_API_KEY')
 
 # Global variables for PDF handling
 current_pdf = None
+current_book_name = None
 total_pages = 0
+
+# Available books
+AVAILABLE_BOOKS = {
+    'Qasas-ul-Anbiya-Part-1.pdf': {
+        'title': 'قصص الأنبياء - Qasas ul-Anbiya (Part 1)',
+        'filename': 'Qasas-ul-Anbiya-Part-1.pdf'
+    },
+    'sharh-arbaoon-nawawi-uthaymeen.pdf': {
+        'title': 'شرح الأربعون النووية - Sharh Arba\'een Nawawi (Uthaymeen)',
+        'filename': 'sharh-arbaoon-nawawi-uthaymeen.pdf'
+    }
+}
 
 # Vision cache: page_num -> { 'tokens': [...], 'lines': [...], 'image_size': (W,H) }
 vision_cache: Dict[int, Dict[str, Any]] = {}
@@ -40,14 +53,42 @@ class PDFProcessor:
     def load_pdf(self, pdf_path):
         """Load PDF file using pdf2image"""
         try:
-            # Convert first page to get total pages count
-            images = convert_from_path(pdf_path, first_page=1, last_page=1)
-            if images:
-                # Get total pages by converting all (this is more reliable)
-                all_images = convert_from_path(pdf_path)
-                self.total_pages = len(all_images)
-                self.pdf_path = pdf_path
-                return self.total_pages
+            # Get page count efficiently using pdfinfo (part of poppler)
+            import subprocess
+            try:
+                result = subprocess.run(['pdfinfo', pdf_path], 
+                                      capture_output=True, text=True, check=True)
+                for line in result.stdout.split('\n'):
+                    if line.startswith('Pages:'):
+                        self.total_pages = int(line.split()[1])
+                        break
+                
+                if self.total_pages > 0:
+                    self.pdf_path = pdf_path
+                    # Clear page cache when loading new PDF
+                    self.page_images_cache.clear()
+                    return self.total_pages
+            except:
+                # Fallback: convert just first page to validate PDF
+                images = convert_from_path(pdf_path, first_page=1, last_page=1)
+                if images:
+                    # Try PyPDF2 for page count
+                    try:
+                        import PyPDF2
+                        with open(pdf_path, 'rb') as file:
+                            pdf_reader = PyPDF2.PdfReader(file)
+                            self.total_pages = len(pdf_reader.pages)
+                    except:
+                        # Last resort: slower method
+                        print("Warning: Using slow page counting method")
+                        all_images = convert_from_path(pdf_path)
+                        self.total_pages = len(all_images)
+                    
+                    if self.total_pages > 0:
+                        self.pdf_path = pdf_path
+                        # Clear page cache when loading new PDF
+                        self.page_images_cache.clear()
+                        return self.total_pages
             return 0
         except Exception as e:
             print(f"Error loading PDF: {e}")
@@ -206,43 +247,85 @@ def index():
     """Main page"""
     return render_template('index.html')
 
-@app.route('/load_pdf')
+@app.route('/load_pdf', methods=['GET', 'POST'])
 def load_pdf():
-    """Load the default PDF file"""
-    global current_pdf, total_pages
+    """Load a PDF file"""
+    global current_pdf, current_book_name, total_pages
     
-    pdf_path = os.path.join(app.static_folder, 'pdfs', 'Qasas-ul-Anbiya-Part-1.pdf')
+    # Default to first book if no selection provided
+    if request.method == 'POST':
+        data = request.get_json()
+        pdf_filename = data.get('pdf_filename', 'Qasas-ul-Anbiya-Part-1.pdf')
+    else:
+        pdf_filename = 'Qasas-ul-Anbiya-Part-1.pdf'
+    
+    # Validate book selection
+    if pdf_filename not in AVAILABLE_BOOKS:
+        return jsonify({
+            'success': False,
+            'message': f'Invalid book selection: {pdf_filename}'
+        })
+
+    book_info = AVAILABLE_BOOKS[pdf_filename]
+    pdf_path = os.path.join(app.static_folder, 'pdfs', book_info['filename'])
     
     if os.path.exists(pdf_path):
         total_pages = pdf_processor.load_pdf(pdf_path)
         if total_pages > 0:
             current_pdf = pdf_path
+            current_book_name = book_info['title']
+            
+            # Clear caches when switching books
+            vision_cache.clear()
+            translation_cache.clear()
+            
             return jsonify({
                 'success': True,
                 'total_pages': total_pages,
-                'message': f'PDF loaded successfully with {total_pages} pages'
+                'book_title': current_book_name,
+                'filename': pdf_filename,
+                'message': f'{current_book_name} loaded successfully with {total_pages} pages'
             })
     
     return jsonify({
         'success': False,
-        'message': 'Failed to load PDF file'
+        'message': f'Failed to load PDF file: {pdf_filename}'
+    })
+
+@app.route('/get_books')
+def get_books():
+    """Get list of available books"""
+    return jsonify({
+        'success': True,
+        'books': AVAILABLE_BOOKS
     })
 
 @app.route('/get_page/<int:page_num>')
 def get_page(page_num):
     """Get specific page as image"""
+    # Get optional parameters for cache busting
+    book_param = request.args.get('book', '')
+    timestamp = request.args.get('t', '')
+    
     if not current_pdf or page_num < 1 or page_num > total_pages:
         return jsonify({'success': False, 'message': 'Invalid page number'})
     
     try:
         image_base64 = pdf_processor.get_page_image_base64(page_num)
         if image_base64:
-            return jsonify({
+            response = jsonify({
                 'success': True,
                 'image_url': image_base64,
                 'page_num': page_num,
-                'total_pages': total_pages
+                'total_pages': total_pages,
+                'book_name': current_book_name,
+                'timestamp': timestamp
             })
+            # Add headers to prevent caching
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+            return response
         else:
             return jsonify({'success': False, 'message': 'Failed to generate page image'})
     

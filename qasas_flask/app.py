@@ -243,6 +243,30 @@ class AIAnalyzer:
         )
         return resp.choices[0].message.content
 
+    def translate_region(self, image_base64: str) -> str:
+        """Translate only the Arabic text present in the provided cropped image to English."""
+        system_prompt = (
+            "You are an expert Arabic-to-English translator. Given an image that contains a cropped section "
+            "from a page, translate only the Arabic text visible in this image into clear English."
+        )
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": [
+                        {"type": "text", "text": "Translate the Arabic text in this selection to English only."},
+                        {"type": "image_url", "image_url": {"url": image_base64, "detail": "high"}}
+                    ]},
+                ],
+                max_tokens=1200,
+                temperature=0.1,
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            print(f"Error with region translation: {e}")
+            raise e
+
 # Translation cache: page_num -> translated_text
 translation_cache: Dict[int, str] = {}
 
@@ -524,6 +548,26 @@ def lookup_click():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Server error: {str(e)}'})
 
+@app.route('/translate_selection', methods=['POST'])
+def translate_selection():
+    """Translate a selected region - just crop and send to AI."""
+    try:
+        data = request.get_json()
+        
+        # Get the cropped image as base64 from frontend
+        cropped_image = data.get('croppedImage')
+        if not cropped_image:
+            return jsonify({'success': False, 'message': 'No cropped image provided'})
+        
+        # Send directly to AI for translation
+        translation = ai_analyzer.translate_region(cropped_image)
+        
+        return jsonify({'success': True, 'translation': translation})
+        
+    except Exception as e:
+        print(f"Translation error: {e}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
 @app.route('/test_api')
 def test_api():
     """Test OpenAI API connection"""
@@ -560,4 +604,4 @@ if __name__ == '__main__':
     if not os.getenv('OPENAI_API_KEY'):
         print("Warning: OPENAI_API_KEY not found in environment variables")
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5001)

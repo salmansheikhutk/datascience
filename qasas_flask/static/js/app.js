@@ -6,6 +6,7 @@ let debugMode = false;
 let isSelecting = false;
 let selectionStart = { x: 0, y: 0 };
 let selectionBox = null;
+let selectStart = { x: 0, y: 0 };
 
 // DOM elements
 const prevBtn = document.getElementById('prev-page');
@@ -23,6 +24,7 @@ const definitionPanel = document.getElementById('definition-panel');
 const panelContent = document.getElementById('panel-content');
 const closePanel = document.getElementById('close-panel');
 const debugBtn = document.getElementById('debug-mode');
+const translateSelectionBtn = document.getElementById('translateSelectionBtn');
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
@@ -93,6 +95,18 @@ async function initializeApp() {
     
     // Also populate the book selector for the PDF section
     await loadAvailableBooks();
+    
+    // Ensure we have a button for region translation
+    if (translateSelectionBtn) {
+      translateSelectionBtn.addEventListener('click', async () => {
+        if (!selectionBox) {
+          // Fallback to page translation if no selection
+          if (typeof translateCurrentPage === 'function') return translateCurrentPage();
+          return;
+        }
+        await translateSelectedRegion();
+      });
+    }
 }
 
 async function showGalleryView() {
@@ -407,6 +421,243 @@ async function loadPageTranslation(pageNum) {
         `;
     }
 }
+
+async function translateSelectedRegion() {
+  try {
+    if (!currentBook || !currentPage || !selectionBox) return;
+    const imgEl = document.getElementById('pageImage');
+    if (!imgEl || !imgEl.naturalWidth || !imgEl.naturalHeight) return;
+
+    const payload = {
+      box: {
+        x1: Math.min(selectionBox.x1, selectionBox.x2),
+        y1: Math.min(selectionBox.y1, selectionBox.y2),
+        x2: Math.max(selectionBox.x1, selectionBox.x2),
+        y2: Math.max(selectionBox.y1, selectionBox.y2),
+      },
+      image_width: imgEl.naturalWidth,
+      image_height: imgEl.naturalHeight,
+    };
+
+    const res = await fetch(`/translate_region/${currentPage}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!data.success) {
+      showTranslation(`Failed to translate selection: ${data.message || 'Unknown error'}`);
+      return;
+    }
+    showTranslation(data.translation || '');
+  } catch (err) {
+    showTranslation(`Error translating selection: ${err.message || err}`);
+  }
+}
+
+// Mouse handlers should already set selectionBox. Ensure they use natural coordinates.
+// Removed old conflicting event handlers - using simplified selection logic below
+
+function drawSelection() {
+  // This function is no longer used - simplified selection handles its own display
+}
+
+function clearSelection() {
+  selectionBox = null;
+  const boxEl = document.getElementById('selectionBox');
+  if (boxEl) boxEl.style.display = 'none';
+}
+
+// Hook clear on page change
+if (typeof onPageChanged === 'function') {
+  const prevOnPageChanged = onPageChanged;
+  window.onPageChanged = (page) => {
+    clearSelection();
+    prevOnPageChanged(page);
+  };
+}
+
+// Simple selection translation - just drag to select and auto-translate
+function setupSimpleSelection() {
+    const overlay = document.getElementById('selectionOverlay');
+    const pageImage = document.getElementById('pdf-image'); // Use the same element that loadPage sets
+    
+    console.log('Setting up simple selection. Overlay:', overlay, 'PageImage:', pageImage);
+    
+    if (!overlay || !pageImage) {
+        console.warn('Missing overlay or pageImage elements');
+        return;
+    }
+    
+    overlay.addEventListener('mousedown', (e) => {
+        console.log('Mouse down - starting selection');
+        isSelecting = true;
+        const rect = overlay.getBoundingClientRect();
+        selectionStart = {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+        
+        // Clear previous selection
+        clearSelectionBox();
+        e.preventDefault();
+    });
+    
+    overlay.addEventListener('mousemove', (e) => {
+        if (!isSelecting) return;
+        
+        const rect = overlay.getBoundingClientRect();
+        const currentPos = {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+        
+        showSelectionBox(selectionStart, currentPos);
+        e.preventDefault();
+    });
+    
+    overlay.addEventListener('mouseup', (e) => {
+        if (!isSelecting) return;
+        
+        console.log('Mouse up - ending selection');
+        isSelecting = false;
+        
+        const rect = overlay.getBoundingClientRect();
+        const endPos = {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+        
+        selectionBox = {
+            x1: Math.min(selectionStart.x, endPos.x),
+            y1: Math.min(selectionStart.y, endPos.y),
+            x2: Math.max(selectionStart.x, endPos.x),
+            y2: Math.max(selectionStart.y, endPos.y)
+        };
+        
+        console.log('Selection box created:', selectionBox);
+        
+        // Auto-translate if selection is big enough
+        const width = Math.abs(selectionBox.x2 - selectionBox.x1);
+        const height = Math.abs(selectionBox.y2 - selectionBox.y1);
+        
+        console.log('Selection size:', width, 'x', height);
+        
+        if (width > 20 && height > 20) {
+            console.log('Selection big enough, translating...');
+            translateSelection();
+        } else {
+            console.log('Selection too small, not translating');
+        }
+        
+        e.preventDefault();
+    });
+}
+
+function showSelectionBox(start, end) {
+    let box = document.getElementById('selectionBox');
+    if (!box) {
+        box = document.createElement('div');
+        box.id = 'selectionBox';
+        box.style.position = 'absolute';
+        box.style.border = '2px solid #007acc';
+        box.style.backgroundColor = 'rgba(0, 122, 204, 0.1)';
+        box.style.pointerEvents = 'none';
+        box.style.zIndex = '1000';
+        document.getElementById('selectionOverlay').appendChild(box);
+    }
+    
+    const x = Math.min(start.x, end.x);
+    const y = Math.min(start.y, end.y);
+    const width = Math.abs(end.x - start.x);
+    const height = Math.abs(end.y - start.y);
+    
+    box.style.left = x + 'px';
+    box.style.top = y + 'px';
+    box.style.width = width + 'px';
+    box.style.height = height + 'px';
+    box.style.display = 'block';
+}
+
+function clearSelectionBox() {
+    const box = document.getElementById('selectionBox');
+    if (box) {
+        box.style.display = 'none';
+    }
+    selectionBox = null;
+}
+
+// Simple function to show translation in the panel
+function showTranslation(translation) {
+    showDefinitionPanel();
+    panelContent.innerHTML = `
+        <div class="selection-translation">
+            <h3 style="margin: 0 0 15px 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 8px;">
+                📦 Selection Translation
+            </h3>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; border-left: 4px solid #3498db; line-height: 1.6;">
+                ${translation}
+            </div>
+        </div>
+    `;
+}
+
+async function translateSelection() {
+    if (!selectionBox) return;
+    
+    try {
+        showTranslation('Translating selection...');
+        
+        const pageImage = document.getElementById('pdf-image'); // Use the same element that loadPage sets
+        if (!pageImage) return;
+        
+        // Create canvas to crop the selection
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Calculate scaling from display to natural image size
+        const scaleX = pageImage.naturalWidth / pageImage.clientWidth;
+        const scaleY = pageImage.naturalHeight / pageImage.clientHeight;
+        
+        const cropX = selectionBox.x1 * scaleX;
+        const cropY = selectionBox.y1 * scaleY;
+        const cropWidth = (selectionBox.x2 - selectionBox.x1) * scaleX;
+        const cropHeight = (selectionBox.y2 - selectionBox.y1) * scaleY;
+        
+        canvas.width = cropWidth;
+        canvas.height = cropHeight;
+        
+        // Draw the cropped portion
+        ctx.drawImage(pageImage, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+        
+        // Convert to base64
+        const croppedImage = canvas.toDataURL('image/png');
+        
+        // Send to backend
+        const response = await fetch('/translate_selection', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ croppedImage })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showTranslation(result.translation || 'No translation received');
+        } else {
+            showTranslation('Translation failed: ' + (result.message || 'Unknown error'));
+        }
+        
+    } catch (error) {
+        console.error('Translation error:', error);
+        showTranslation('Error: ' + error.message);
+    }
+}
+
+// Add to initialization
+document.addEventListener('DOMContentLoaded', () => {
+    setupSimpleSelection();
+});
 
 async function handleImageClick(event) {
     // Don't handle click if we were selecting

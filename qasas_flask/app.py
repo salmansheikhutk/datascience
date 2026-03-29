@@ -280,6 +280,11 @@ def index():
     """Main page"""
     return render_template('index.html')
 
+@app.route('/claude')
+def claude():
+    """Claude's creative page"""
+    return render_template('claude.html')
+
 @app.route('/load_pdf', methods=['GET', 'POST'])
 def load_pdf():
     """Load a PDF file"""

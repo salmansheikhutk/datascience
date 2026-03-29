@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-Means Clustering: Knoxville Food Venues</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <h1>K-Means Clustering: Knoxville Food Venues</h1>
+                <p class="subtitle">An analysis of food venues in Knoxville neighborhoods using Foursquare data.</p>
+            </div>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <a href="index.html">Home</a>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+            <div class="page-content">
+                <section id="summary">
+                    <h2>Project Summary</h2>
+                    <p>This project analyzes the distribution of food venues across different neighborhoods in Knoxville, TN. By leveraging the Foursquare API to gather data and applying K-Means clustering, the project aims to identify distinct neighborhood profiles based on their food scenes. This analysis can help prospective restaurant owners make informed decisions about where to open a new establishment, such as a new Pizza Place.</p>
+                </section>
+
+                <section id="methodology">
+                    <h2>Methodology</h2>
+                    <ol>
+                        <li><strong>Data Collection:</strong> A list of Knoxville neighborhoods was compiled, and their geographical coordinates were obtained using the `geopy` library.</li>
+                        <li><strong>Foursquare API:</strong> The Foursquare API was used to fetch the top 100 food venues within a 750-meter radius of each neighborhood's center.</li>
+                        <li><strong>Data Preprocessing:</strong> The venue data was cleaned and transformed using one-hot encoding to prepare it for clustering based on venue category frequency.</li>
+                        <li><strong>K-Means Clustering:</strong> The K-Means algorithm was applied to group neighborhoods into five distinct clusters based on their most common venue types.</li>
+                        <li><strong>Visualization:</strong> The results, including the neighborhood clusters, were visualized on an interactive map using the `Folium` library.</li>
+                    </ol>
+                </section>
+
+                <section id="results">
+                    <h2>Results</h2>
+                    <p>The analysis identified five distinct clusters of neighborhoods, each with a unique culinary profile. For example, the study found that most pizza places were concentrated in one cluster, while other clusters were characterized by a high density of fast-food restaurants or specific cuisines like Indian or Chinese. The project provides a detailed breakdown of each cluster, offering valuable insights into the food landscape of Knoxville.</p>
+                    <p>For a complete walkthrough of the analysis, including the code and interactive maps, please view the Jupyter Notebook and the final report.</p>
+                    <a href="https://nbviewer.jupyter.org/github/salmansheikhutk/datascience/blob/dev/Capstone%20Project.ipynb" target="_blank" class="button">View Notebook</a>
+                    <a href="Capstone Final Report.pdf" target="_blank" class="button">View Final Report</a>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Salman Sheikh. All Rights Reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>
